@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 """
-VidSeq - Generative Video Sequencer.
+SnakeVISE - Generative Video Sequencer.
 
 Creates rhythmic video montages based on BPM and algorithms.
 """

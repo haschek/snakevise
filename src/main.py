@@ -20,12 +20,12 @@ from .utils import (
     setup_logging,
 )
 
-logger = logging.getLogger("vidseq")
+logger = logging.getLogger("snakevise")
 
 
 def main() -> None:
-    """Main entry point for VidSeq CLI."""
-    parser = argparse.ArgumentParser(description="VidSeq - CLI Video Generator")
+    """Main entry point for SnakeVISE CLI."""
+    parser = argparse.ArgumentParser(description="SnakeVISE - CLI Video Generator")
 
     effects_list = ", ".join(EffectEngine.AVAILABLE_EFFECTS)
 
@@ -94,7 +94,7 @@ def main() -> None:
     args = parser.parse_args()
 
     setup_logging(args.log)
-    logger.info("Initializing VidSeq...")
+    logger.info("Initializing SnakeVISE...")
 
     active_conf = ConfigResolver.resolve(args)
 

@@ -13,7 +13,7 @@ def setup_logging(log_file: Optional[str] = None) -> logging.Logger:
     Returns:
         The configured logger instance.
     """
-    logger_instance = logging.getLogger("vidseq")
+    logger_instance = logging.getLogger("snakevise")
     logger_instance.setLevel(logging.INFO)
     formatter = logging.Formatter(
         "[%(asctime)s] %(levelname)s: %(message)s", datefmt="%H:%M:%S"

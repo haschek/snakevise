@@ -1,12 +1,12 @@
-# VidSeq - Generative Video Sequencer
+# SnakeVISE - Generative VIdeo SEquencer, written in Python
 
-**VidSeq** is a CLI-based rhythmic video editor that creates dynamic montages synced to a specific BPM. It uses procedural algorithms to slice input media into beat-accurate snippets and applies a variety of visual effects.
+**SnakeVISE** (speak: Snake vice) is a CLI-based rhythmic video editor that creates dynamic montages synced to a specific BPM. It uses procedural algorithms to slice input media into beat-accurate snippets and applies a variety of visual effects.
 
 ---
 
 ## 🌊 Vibe Coding
 
-VidSeq was built using **Vibe Coding** principles—leveraging advanced AI orchestration (like Gemini CLI) to rapidly prototype and modularize complex video processing logic. Instead of manual boilerplate, the focus was on defining the "vibe" (rhythmic, glitchy, procedural) and allowing AI to handle the surgical implementation of effects and architecture.
+SnakeVISE was built using **Vibe Coding** principles—leveraging advanced AI orchestration (like Gemini CLI) to rapidly prototype and modularize complex video processing logic. Instead of manual boilerplate, the focus was on defining the "vibe" (rhythmic, glitchy, procedural) and allowing AI to handle the surgical implementation of effects and architecture.
 
 ---
 
@@ -29,8 +29,8 @@ VidSeq was built using **Vibe Coding** principles—leveraging advanced AI orche
 1. **Clone and Setup**:
 
    ```bash
-   git clone https://github.com/haschek/vidseqpy.git
-   cd vidseqpy
+   git clone https://github.com/haschek/snakevise.git
+   cd snakevise
    python -m venv .venv
    source .venv/bin/activate
    pip install .
@@ -48,7 +48,7 @@ VidSeq was built using **Vibe Coding** principles—leveraging advanced AI orche
 Create a video from a single source using the `vintage` preset:
 
 ```bash
-python vidseq.py --input my_video.mp4 --preset vintage --output rhythmic_montage.mp4
+python snakevise.py --input my_video.mp4 --preset vintage --output rhythmic_montage.mp4
 ```
 
 ### Advanced Input Strings
@@ -57,7 +57,7 @@ You can define specific ranges and BPMs per input:
 `FILE:START_SEC:END_SEC:BPM:BEAT_RANGE`
 
 ```bash
-python vidseq.py --input "vacation.mp4:10:60:120:4..8" --audio music.mp3 --modus random
+python snakevise.py --input "vacation.mp4:10:60:120:4..8" --audio music.mp3 --modus random
 ```
 
 ---
@@ -69,13 +69,13 @@ You can save your current configuration (including all inputs, vfx settings, and
 - **Save a project**:
 
   ```bash
-  python vidseq.py --input video.mp4 --vfx glitchchroma:100:5 --saveproject my_cool_edit.json
+  python snakevise.py --input video.mp4 --vfx glitchchroma:100:5 --saveproject my_cool_edit.json
   ```
 
 - **Load a project**:
 
   ```bash
-  python vidseq.py --loadproject my_cool_edit.json --output second_version.mp4
+  python snakevise.py --loadproject my_cool_edit.json --output second_version.mp4
   ```
 
 ---
@@ -116,7 +116,6 @@ You can save your current configuration (including all inputs, vfx settings, and
 - `--vfx-intensity`: Global strength range (e.g., `1..5`).
 - `--vfx-maximum`: Max number of effects to apply per snippet.
 - `--vfx-order`: Order of effects (`linear` or `random`).
-
 - `--fadein`: Fade-in duration in Beats.
 - `--fadeout`: Fade-out duration in Beats.
 - `--fadecolor`: Hex color for fades (default: `#000000`).
@@ -125,26 +124,28 @@ You can save your current configuration (including all inputs, vfx settings, and
 
 ## 🎨 Effects Encyclopedia
 
-- `zoomin`: Smooth procedural zoom into the center of the frame. |
-- `zoomout`: Smooth procedural zoom out from the center. |
-- `glitchchroma`: Random RGB channel shifting for a chromatic aberration look. |
-- `glitchmotion`: Slices the snippet into tiny chunks and shuffles them temporally. |
-- `mirror`: Horizontal, vertical, or quad mirroring. |
-- `grain`: Adds procedural film grain/noise. |
-- `speed`: Procedural speed ramping within the snippet. |
-- `blackwhite`: High-contrast black and white filter. |
-- `posterize`: Reduces the number of colors for a retro/artistic look. |
-- `reverse`: Plays a portion or the entirety of the snippet backwards. |
-- `stopmotion`: Lowers the effective framerate for a jerky, rhythmic feel. |
-- `pixelize`: Low-res pixel art effect with dynamic scaling. |
-- `oldmovie`: Adds vignette, tinting, and flicker for a vintage look. |
-- `colorshift`: Dynamic HSV hue rotation. |
-- `shutterecho`: Ghosting effect by blending current frames with previous ones. |
-- `tvscreen`: Simulated CRT scanlines, static, and signal interference. |
-- `newspaper`: Halftone dot pattern reminiscent of print media. |
-- `terminal`: Green-on-black monochromatic CRT terminal look. |
-- `dataglitch`: Random block-based compression artifacts and inversions. |
-- `asciiart`: Real-time conversion of video frames to colored ASCII text. |
+| Effect | Description |
+| :--- | :--- |
+| `zoomin` | Smooth procedural zoom into the center of the frame. |
+| `zoomout` | Smooth procedural zoom out from the center. |
+| `glitchchroma` | Random RGB channel shifting for a chromatic aberration look. |
+| `glitchmotion` | Slices the snippet into tiny chunks and shuffles them temporally. |
+| `mirror` | Horizontal, vertical, or quad mirroring. |
+| `grain` | Adds procedural film grain/noise. |
+| `speed` | Procedural speed ramping within the snippet. |
+| `blackwhite` | High-contrast black and white filter. |
+| `posterize` | Reduces the number of colors for a retro/artistic look. |
+| `reverse` | Plays a portion or the entirety of the snippet backwards. |
+| `stopmotion` | Lowers the effective framerate for a jerky, rhythmic feel. |
+| `pixelize` | Low-res pixel art effect with dynamic scaling. |
+| `oldmovie` | Adds vignette, tinting, and flicker for a vintage look. |
+| `colorshift` | Dynamic HSV hue rotation. |
+| `shutterecho` | Ghosting effect by blending current frames with previous ones. |
+| `tvscreen` | Simulated CRT scanlines, static, and signal interference. |
+| `newspaper` | Halftone dot pattern reminiscent of print media. |
+| `terminal` | Green-on-black monochromatic CRT terminal look. |
+| `dataglitch` | Random block-based compression artifacts and inversions. |
+| `asciiart` | Real-time conversion of video frames to colored ASCII text. |
 
 ---
 

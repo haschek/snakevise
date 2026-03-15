@@ -9,7 +9,7 @@ from .effects import EffectEngine
 from .models import Segment, Snippet
 from .utils import parse_int_range_string
 
-logger = logging.getLogger("vidseq")
+logger = logging.getLogger("snakevise")
 
 
 class MediaSource:

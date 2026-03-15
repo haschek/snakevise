@@ -16,7 +16,7 @@ from .models import RenderConfig, Snippet
 from .reframing import reframe
 from .utils import hex_to_rgb
 
-logger = logging.getLogger("vidseq")
+logger = logging.getLogger("snakevise")
 
 
 class Renderer:

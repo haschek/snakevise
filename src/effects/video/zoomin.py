@@ -14,7 +14,7 @@ def apply(clip: VideoClip, strength: float) -> VideoClip:
         x1, y1 = (w - crop_w) / 2, (h - crop_h) / 2
         return np.array(
             img.crop((x1, y1, x1 + crop_w, y1 + crop_h)).resize(
-                (w, h), PIL.Image.Resampling.LANCZOS
+                (w, h), PIL.Image.LANCZOS
             )
         )
 

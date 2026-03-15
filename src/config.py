@@ -7,7 +7,7 @@ from typing import Any, Dict, Tuple
 from .constants import DEFAULTS, PRESETS
 from .utils import parse_int_range_string
 
-logger = logging.getLogger("vidseq")
+logger = logging.getLogger("snakevise")
 
 
 class ConfigResolver:

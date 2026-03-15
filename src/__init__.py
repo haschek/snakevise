@@ -1,1 +1,1 @@
-"""VidSeq package."""
+"""SnakeVISE package."""
