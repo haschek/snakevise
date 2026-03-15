@@ -1,0 +1,16 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.9.0
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.27
+    hooks:
+      - id: pymarkdown
+        args: [ "--config", ".pymarkdown.json", "scan" ]

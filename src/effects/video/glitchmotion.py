@@ -2,6 +2,7 @@ import random
 import numpy as np
 from moviepy.editor import VideoClip, concatenate_videoclips
 
+
 def apply(clip: VideoClip, strength: float, bpm: float) -> VideoClip:
     chunk_len = max(
         1.0 / 30.0,

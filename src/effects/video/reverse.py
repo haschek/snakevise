@@ -1,5 +1,6 @@
 from moviepy.editor import VideoClip, concatenate_videoclips, vfx
 
+
 def apply(clip: VideoClip, strength: float, bpm: float) -> VideoClip:
     rev_dur = clip.duration * (strength / 10.0)
     rev_dur = round(rev_dur / ((60.0 / bpm) / 4.0)) * ((60.0 / bpm) / 4.0)

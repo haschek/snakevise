@@ -2,6 +2,7 @@ import random
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     mode = "quad" if strength >= 7 else random.choice(["horiz", "vert"])
 

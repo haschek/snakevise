@@ -1,6 +1,7 @@
 import random
 from moviepy.editor import VideoClip, concatenate_videoclips, vfx
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     total_dur = clip.duration
     src_split = total_dur / 2.0

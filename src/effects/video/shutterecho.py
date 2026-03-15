@@ -1,6 +1,7 @@
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     delay = 0.05 + (strength - 1.0) * (0.45 / 9.0)
     alpha = int((0.15 + (strength - 1.0) * (0.45 / 9.0)) * 256)

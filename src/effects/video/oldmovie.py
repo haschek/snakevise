@@ -3,6 +3,7 @@ import numpy as np
 from moviepy.editor import VideoClip
 from ...utils import hex_to_rgb
 
+
 def apply(clip: VideoClip, strength: float, fade_color_hex: str) -> VideoClip:
     w, h = clip.size
     fade_rgb = hex_to_rgb(fade_color_hex)

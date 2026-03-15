@@ -1,12 +1,14 @@
 # SnakeVISE - Generative VIdeo SEquencer, written in Python
 
-**SnakeVISE** (speak: Snake vice) is a CLI-based rhythmic video editor that creates dynamic montages synced to a specific BPM. It uses procedural algorithms to slice input media into beat-accurate snippets and applies a variety of visual effects.
+**SnakeVISE** (speak: Snake vice) is a CLI-based rhythmic video editor that creates dynamic montages synced to a specific BPM.
+It uses procedural algorithms to slice input media into beat-accurate snippets and applies a variety of visual effects.
 
 ---
 
 ## 🌊 Vibe Coding
 
-SnakeVISE was built using **Vibe Coding** principles—leveraging advanced AI orchestration (like Gemini CLI) to rapidly prototype and modularize complex video processing logic. Instead of manual boilerplate, the focus was on defining the "vibe" (rhythmic, glitchy, procedural) and allowing AI to handle the surgical implementation of effects and architecture.
+SnakeVISE was built using **Vibe Coding** principles—leveraging advanced AI orchestration (like Gemini CLI) to rapidly prototype and modularize complex video processing logic.
+Instead of manual boilerplate, the focus was on defining the "vibe" (rhythmic, glitchy, procedural), allowing AI to handle the surgical implementation of effects and architecture.
 
 ---
 
@@ -34,6 +36,10 @@ SnakeVISE was built using **Vibe Coding** principles—leveraging advanced AI or
    python -m venv .venv
    source .venv/bin/activate
    pip install .
+
+   # For developers:
+   pip install -e ".[dev]"
+   pre-commit install
    ```
 
 2. **System Dependencies**:

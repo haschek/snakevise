@@ -2,6 +2,7 @@ import random
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     w, h = clip.size
     scanlines = np.repeat(
@@ -34,7 +35,9 @@ def apply(clip: VideoClip, strength: float) -> VideoClip:
         if strength > 7 and random.random() < 0.3:
             y = random.randint(0, max(0, h - 50))
             hh = random.randint(10, 50)
-            f[y : y + hh, :] = np.roll(f[y : y + hh, :], random.randint(-50, 50), axis=1)
+            f[y : y + hh, :] = np.roll(
+                f[y : y + hh, :], random.randint(-50, 50), axis=1
+            )
         return np.clip(f, 0, 255).astype(np.uint8)
 
     return clip.fl(tv)

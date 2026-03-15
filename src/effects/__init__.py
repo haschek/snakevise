@@ -55,7 +55,9 @@ class EffectEngine:
 
     @staticmethod
     def select_effects(
-        configs: List[Dict[str, Any]], max_limit: Optional[int] = None, order: str = "linear"
+        configs: List[Dict[str, Any]],
+        max_limit: Optional[int] = None,
+        order: str = "linear",
     ) -> List[Dict[str, Any]]:
         """Selects effects based on probability configurations.
 

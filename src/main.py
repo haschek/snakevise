@@ -1,5 +1,6 @@
 import argparse
 import glob
+import json
 import logging
 import random
 from pathlib import Path
@@ -40,7 +41,9 @@ def main() -> None:
         type=str,
         help="Load a configuration preset. Options: subtle, vintage, lofi, urban, chaos or path to a JSON file.",
     )
-    g_in.add_argument("--saveproject", type=Path, help="Save current configuration to JSON")
+    g_in.add_argument(
+        "--saveproject", type=Path, help="Save current configuration to JSON"
+    )
     g_in.add_argument("--loadproject", type=Path, help="Load configuration from JSON")
     g_in.add_argument(
         "--modus",
@@ -48,7 +51,9 @@ def main() -> None:
         help="Sequencing algorithm (Source-Snippet)",
     )
     g_in.add_argument("--bpm", type=float, help="Global BPM")
-    g_in.add_argument("--snippetbeats", type=str, help="Beats per snippet range (e.g. 4..8)")
+    g_in.add_argument(
+        "--snippetbeats", type=str, help="Beats per snippet range (e.g. 4..8)"
+    )
 
     g_out = parser.add_argument_group("Output Settings")
     g_out.add_argument(
@@ -77,9 +82,21 @@ def main() -> None:
         action="append",
         help=f"Format: NAME:CHANCE:STRENGTH (e.g., glitchchroma:50:3..8). Available: {effects_list}",
     )
-    g_vfx.add_argument("--vfx-chance", dest="vfx_chance", type=float, help="Global effect probability")
-    g_vfx.add_argument("--vfx-intensity", dest="vfx_intensity", type=str, help="Global effect intensity (e.g. 5 or 3..8)")
-    g_vfx.add_argument("--vfx-maximum", dest="vfx_maximum", type=int, help="Maximum number of effects per snippet")
+    g_vfx.add_argument(
+        "--vfx-chance", dest="vfx_chance", type=float, help="Global effect probability"
+    )
+    g_vfx.add_argument(
+        "--vfx-intensity",
+        dest="vfx_intensity",
+        type=str,
+        help="Global effect intensity (e.g. 5 or 3..8)",
+    )
+    g_vfx.add_argument(
+        "--vfx-maximum",
+        dest="vfx_maximum",
+        type=int,
+        help="Maximum number of effects per snippet",
+    )
     g_vfx.add_argument(
         "--vfx-order",
         dest="vfx_order",
@@ -88,7 +105,9 @@ def main() -> None:
     )
     g_vfx.add_argument("--fadein", type=int, help="Fade-in duration in Beats")
     g_vfx.add_argument("--fadeout", type=int, help="Fade-out duration in Beats")
-    g_vfx.add_argument("--fadecolor", type=str, default="#000000", help="Hex color for fades")
+    g_vfx.add_argument(
+        "--fadecolor", type=str, default="#000000", help="Hex color for fades"
+    )
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -117,7 +136,9 @@ def main() -> None:
     logger.info("=" * 60 + "\n")
 
     if not active_conf["inputs"]:
-        logger.error("No input sources defined. Use --input or load a project with inputs.")
+        logger.error(
+            "No input sources defined. Use --input or load a project with inputs."
+        )
         return
 
     # Save Project
@@ -140,7 +161,9 @@ def main() -> None:
         fps=active_conf["fps"],
         codec=active_conf["codec"],
         optimize=active_conf["optimize"],
-        audio_path=Path(active_conf["audio_path"]) if active_conf.get("audio_path") else None,
+        audio_path=Path(active_conf["audio_path"])
+        if active_conf.get("audio_path")
+        else None,
         target_duration=None,
         fade_in=active_conf["fadein"] * global_beat_dur,
         fade_out=active_conf["fadeout"] * global_beat_dur,
@@ -182,9 +205,24 @@ def main() -> None:
         # Try resolving the path directly first (handling possible shell-escaped characters)
         unescaped_fname = fname
         # Common shell escapes
-        for char in [' ', '(', ')', '[', ']', '{', '}', '&', '!', "'", '"', '*', '?', '$']:
+        for char in [
+            " ",
+            "(",
+            ")",
+            "[",
+            "]",
+            "{",
+            "}",
+            "&",
+            "!",
+            "'",
+            '"',
+            "*",
+            "?",
+            "$",
+        ]:
             unescaped_fname = unescaped_fname.replace(f"\\{char}", char)
-        
+
         potential_path = Path(unescaped_fname)
 
         if potential_path.exists():

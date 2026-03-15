@@ -8,7 +8,6 @@ from moviepy.editor import (
     ImageClip,
     VideoFileClip,
     concatenate_videoclips,
-    vfx,
 )
 
 from .effects import EffectEngine
@@ -46,11 +45,15 @@ class Renderer:
             target_res = self.cfg.resolution
 
             if not snippet.source_path.exists():
-                logger.error(f"Source file not found for snippet {snippet.index}: {snippet.source_path}")
+                logger.error(
+                    f"Source file not found for snippet {snippet.index}: {snippet.source_path}"
+                )
                 return None
 
             if snippet.is_image:
-                clip = ImageClip(str(snippet.source_path)).set_duration(snippet.duration)
+                clip = ImageClip(str(snippet.source_path)).set_duration(
+                    snippet.duration
+                )
             else:
                 clip = VideoFileClip(str(snippet.source_path)).subclip(
                     snippet.start_time, snippet.start_time + snippet.duration
@@ -101,7 +104,7 @@ class Renderer:
             f"Starting physical rendering of {total} snippets to {self.cfg.temp_dir}..."
         )
         for i, snippet in enumerate(edl):
-            print(f"\rProgress: {i+1}/{total}", end="", flush=True)
+            print(f"\rProgress: {i + 1}/{total}", end="", flush=True)
             path = self._process_snippet(snippet)
             if path:
                 valid_files.append(path)
@@ -123,7 +126,7 @@ class Renderer:
         try:
             logger.info("Concatenating snippets (Chain Mode)...")
             clips = [VideoFileClip(str(p)) for p in clip_paths]
-            
+
             if not clips:
                 logger.error("Failed to load any clips for finalization.")
                 return
@@ -138,9 +141,13 @@ class Renderer:
 
             fade_rgb = hex_to_rgb(self.cfg.fade_color)
             if self.cfg.fade_in > 0:
-                final_video = final_video.fadein(self.cfg.fade_in, initial_color=fade_rgb)
+                final_video = final_video.fadein(
+                    self.cfg.fade_in, initial_color=fade_rgb
+                )
             if self.cfg.fade_out > 0:
-                final_video = final_video.fadeout(self.cfg.fade_out, final_color=fade_rgb)
+                final_video = final_video.fadeout(
+                    self.cfg.fade_out, final_color=fade_rgb
+                )
 
             params = {
                 "fps": self.cfg.fps,
@@ -173,8 +180,12 @@ class Renderer:
             logger.critical(f"Critical error during finalization: {e}", exc_info=True)
             # Cleanup even on error
             if audio:
-                try: audio.close()
-                except: pass
+                try:
+                    audio.close()
+                except Exception:
+                    pass
             for c in clips:
-                try: c.close()
-                except: pass
+                try:
+                    c.close()
+                except Exception:
+                    pass

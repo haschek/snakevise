@@ -1,6 +1,7 @@
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     n_levels = int(np.clip(32.0 - (strength - 1.0) * (28.0 / 9.0), 2, 256))
     factor = (n_levels - 1) / 255.0

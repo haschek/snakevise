@@ -29,6 +29,7 @@
 - `snakevise.py` acts as the entry point.
 - Use `pytest` for testing (to be added).
 - Format code using `black` or `ruff`.
+- **All development-only dependencies (linters, test frameworks, etc.) MUST be added to the `[project.optional-dependencies]` group under `dev` in `pyproject.toml`.**
 
 ## Important Notes
 

@@ -1,6 +1,7 @@
 from typing import Tuple
 from moviepy.editor import VideoClip, vfx
 
+
 def apply(clip: VideoClip, target_res: Tuple[int, int]) -> VideoClip:
     """Crops the clip to fill the target resolution, maintaining aspect ratio.
 
@@ -22,7 +23,9 @@ def apply(clip: VideoClip, target_res: Tuple[int, int]) -> VideoClip:
         # Source is taller than target
         new_w, new_h = w_s, w_s / target_ar
 
-    clip = clip.fx(vfx.crop, x_center=w_s / 2, y_center=h_s / 2, width=new_w, height=new_h)
+    clip = clip.fx(
+        vfx.crop, x_center=w_s / 2, y_center=h_s / 2, width=new_w, height=new_h
+    )
     clip = clip.resize(newsize=target_res)
-    
+
     return clip

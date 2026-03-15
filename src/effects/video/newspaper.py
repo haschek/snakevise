@@ -1,6 +1,7 @@
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     w, h = clip.size
     freq = max(0.1, 0.8 - strength * 0.05)

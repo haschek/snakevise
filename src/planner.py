@@ -7,7 +7,6 @@ from moviepy.editor import VideoFileClip
 
 from .effects import EffectEngine
 from .models import Segment, Snippet
-from .utils import parse_int_range_string
 
 logger = logging.getLogger("snakevise")
 
@@ -192,7 +191,9 @@ class TimelinePlanner:
 
             if self.source_mode == "random" and self.snippet_mode == "random":
                 if pool_cursor >= len(global_pool):
-                    logger.warning("All video material exhausted (Random Pool empty). Stopping.")
+                    logger.warning(
+                        "All video material exhausted (Random Pool empty). Stopping."
+                    )
                     break
 
                 candidate = global_pool[pool_cursor]
@@ -208,7 +209,9 @@ class TimelinePlanner:
 
                 segment = global_pool[pool_cursor]
                 pool_cursor += 1
-                source_obj = next(s for s in self.sources if s.index == segment.source_index)
+                source_obj = next(
+                    s for s in self.sources if s.index == segment.source_index
+                )
 
             elif self.source_mode == "linear" and self.snippet_mode == "random":
                 found_src = False
@@ -221,8 +224,13 @@ class TimelinePlanner:
                         candidate = source_pools[s_idx][0]
                         if self._is_sequential(candidate):
                             for swap_idx in range(1, len(source_pools[s_idx])):
-                                if not self._is_sequential(source_pools[s_idx][swap_idx]):
-                                    source_pools[s_idx][0], source_pools[s_idx][swap_idx] = (
+                                if not self._is_sequential(
+                                    source_pools[s_idx][swap_idx]
+                                ):
+                                    (
+                                        source_pools[s_idx][0],
+                                        source_pools[s_idx][swap_idx],
+                                    ) = (
                                         source_pools[s_idx][swap_idx],
                                         source_pools[s_idx][0],
                                     )

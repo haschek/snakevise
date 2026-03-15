@@ -2,6 +2,7 @@ import random
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     def gc(gf, t):
         f = gf(t)

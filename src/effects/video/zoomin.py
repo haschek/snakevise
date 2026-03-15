@@ -2,6 +2,7 @@ import numpy as np
 import PIL.Image
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     w, h = clip.size
     max_zoom = 1 + (strength * 0.05)

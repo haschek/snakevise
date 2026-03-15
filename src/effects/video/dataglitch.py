@@ -3,6 +3,7 @@ import numpy as np
 import PIL.Image
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     w, h = clip.size
     n_glitch = int(strength * 2.0)
@@ -14,7 +15,10 @@ def apply(clip: VideoClip, strength: float) -> VideoClip:
         gl = orig.copy()
         for _ in range(random.randint(1, max(1, n_glitch + random.randint(-2, 3)))):
             bw, bh = random.randint(32, max(33, mw)), random.randint(32, max(33, mh))
-            bx, by = random.randint(0, max(0, w - bw)), random.randint(0, max(0, h - bh))
+            bx, by = (
+                random.randint(0, max(0, w - bw)),
+                random.randint(0, max(0, h - bh)),
+            )
             reg = orig[by : by + bh, bx : bx + bw].copy()
             typ = random.choice(["px", "px", "sh", "inv"])
             if typ == "px":

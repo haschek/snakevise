@@ -2,6 +2,7 @@ import PIL.Image
 import numpy as np
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     w, h = clip.size
     div = 50.0 - (strength - 1.0) * (40.0 / 9.0)

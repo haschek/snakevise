@@ -1,5 +1,6 @@
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float, bpm: float, target_fps: int) -> VideoClip:
     base_fps = int(target_fps * 0.5)
     fps_low_strength = (base_fps // 4) * 4

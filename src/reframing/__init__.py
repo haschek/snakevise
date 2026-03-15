@@ -4,7 +4,10 @@ from typing import Tuple
 from moviepy.editor import VideoClip
 from . import fill
 
-def reframe(clip: VideoClip, target_res: Tuple[int, int], method: str = "fill") -> VideoClip:
+
+def reframe(
+    clip: VideoClip, target_res: Tuple[int, int], method: str = "fill"
+) -> VideoClip:
     """Applies reframing to a clip.
 
     Args:
@@ -17,6 +20,6 @@ def reframe(clip: VideoClip, target_res: Tuple[int, int], method: str = "fill") 
     """
     if method == "fill":
         return fill.apply(clip, target_res)
-    
+
     # Default fallback
     return clip.resize(newsize=target_res)

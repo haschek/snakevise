@@ -2,6 +2,7 @@ import numpy as np
 import PIL.Image
 from moviepy.editor import VideoClip
 
+
 def apply(clip: VideoClip, strength: float) -> VideoClip:
     w, h = clip.size
     scale_factor = 1.0 + (strength - 1) * (3.0 / 9.0)

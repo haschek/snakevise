@@ -10,6 +10,7 @@ Creates rhythmic video montages based on BPM and algorithms.
 # Some older versions of moviepy (like 1.0.3) still use PIL.Image.ANTIALIAS
 # which was removed in Pillow 10.0.0 in favor of PIL.Image.LANCZOS.
 import PIL.Image
+
 if not hasattr(PIL.Image, "ANTIALIAS"):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 # ------------------------------------------
