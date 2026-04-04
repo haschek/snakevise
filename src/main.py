@@ -18,7 +18,10 @@ from .utils import (
     parse_effect_string,
     parse_range_string,
     parse_resolution,
+    relativize_path,
+    resolve_path,
     setup_logging,
+    unescape_path,
 )
 
 logger = logging.getLogger("snakevise")
@@ -144,8 +147,30 @@ def main() -> None:
     # Save Project
     if args.saveproject:
         try:
+            save_dir = args.saveproject.parent.resolve()
+            save_conf = active_conf.copy()
+            # Don't save internal helper
+            save_conf.pop("_project_root", None)
+
+            # Relativize audio_path
+            if save_conf.get("audio_path"):
+                save_conf["audio_path"] = relativize_path(
+                    save_conf["audio_path"], save_dir
+                )
+
+            # Relativize inputs
+            if save_conf.get("inputs"):
+                rel_inputs = []
+                for inp_str in save_conf["inputs"]:
+                    # Format: FILE:START:END:BPM:BEATS
+                    parts = inp_str.split(":")
+                    if parts:
+                        parts[0] = relativize_path(parts[0], save_dir)
+                    rel_inputs.append(":".join(parts))
+                save_conf["inputs"] = rel_inputs
+
             with open(args.saveproject, "w", encoding="utf-8") as f:
-                json.dump(active_conf, f, indent=4)
+                json.dump(save_conf, f, indent=4)
             logger.info(f"Project configuration saved to: {args.saveproject}")
         except Exception as e:
             logger.error(f"Failed to save project: {e}")
@@ -154,14 +179,21 @@ def main() -> None:
     w, h = map(int, active_conf["resolution"].lower().split("x"))
     global_beat_dur = 60.0 / active_conf["bpm"]
 
+    # Resolve paths (respecting project root if loaded from JSON)
+    project_root = active_conf.get("_project_root")
+
+    # Check if JSON had output/temp overrides
+    final_output = Path(active_conf.get("output", args.output))
+    final_temp = Path(active_conf.get("temp", args.temp))
+
     render_config = RenderConfig(
-        output_path=args.output,
-        temp_dir=args.temp,
+        output_path=resolve_path(str(final_output), project_root),
+        temp_dir=resolve_path(str(final_temp), project_root),
         resolution=(w, h),
         fps=active_conf["fps"],
         codec=active_conf["codec"],
         optimize=active_conf["optimize"],
-        audio_path=Path(active_conf["audio_path"])
+        audio_path=resolve_path(active_conf["audio_path"], project_root)
         if active_conf.get("audio_path")
         else None,
         target_duration=None,
@@ -202,33 +234,14 @@ def main() -> None:
             inp_str, defaults
         )
 
-        # Try resolving the path directly first (handling possible shell-escaped characters)
-        unescaped_fname = fname
-        # Common shell escapes
-        for char in [
-            " ",
-            "(",
-            ")",
-            "[",
-            "]",
-            "{",
-            "}",
-            "&",
-            "!",
-            "'",
-            '"',
-            "*",
-            "?",
-            "$",
-        ]:
-            unescaped_fname = unescaped_fname.replace(f"\\{char}", char)
-
-        potential_path = Path(unescaped_fname)
+        # Resolve the path using the improved utility
+        unescaped_fname = unescape_path(fname)
+        potential_path = resolve_path(unescaped_fname, project_root)
 
         if potential_path.exists():
             files = [str(potential_path)]
         else:
-            files = glob.glob(fname)
+            files = glob.glob(str(potential_path))
 
         if not files:
             logger.warning(f"File or pattern not found: {fname}")

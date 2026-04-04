@@ -1,7 +1,75 @@
 import argparse
 import logging
+import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+
+def unescape_path(path_str: str) -> str:
+    """Removes common shell escapes from a path string."""
+    for char in [" ", "(", ")", "[", "]", "{", "}", "&", "!", "'", '"', "*", "?", "$"]:
+        path_str = path_str.replace(f"\\{char}", char)
+    return path_str
+
+
+def resolve_path(path_str: str, base_dir: Optional[Path] = None) -> Path:
+    """Resolves a path string.
+
+    Handles:
+    1. Home path (~)
+    2. Absolute path
+    3. Relative path (relative to base_dir if provided, else CWD)
+
+    Args:
+        path_str: The path string to resolve.
+        base_dir: Optional base directory for relative paths.
+
+    Returns:
+        The resolved Path object.
+    """
+    path = Path(path_str)
+
+    # 1. Home path expansion
+    if path_str.startswith("~"):
+        return path.expanduser()
+
+    # 2. Absolute path
+    if path.is_absolute():
+        return path
+
+    # 3. Relative path
+    if base_dir:
+        return (base_dir / path).resolve()
+
+    return path.resolve()
+
+
+def relativize_path(path_str: str, base_dir: Path) -> str:
+    """Converts a path to be strictly relative to the base_dir.
+
+    Args:
+        path_str: The path to convert.
+        base_dir: The directory to make it relative to.
+
+    Returns:
+        A string representation of the relative path.
+    """
+    try:
+        # 1. Resolve to absolute path (handling escapes and ~)
+        path_str = unescape_path(path_str)
+        p = Path(path_str)
+        if path_str.startswith("~"):
+            abs_path = p.expanduser().resolve()
+        else:
+            abs_path = p.resolve()
+
+        abs_base = base_dir.resolve()
+
+        # 2. Get relative path from base_dir
+        return os.path.relpath(abs_path, abs_base)
+    except Exception:
+        return path_str
 
 
 def setup_logging(log_file: Optional[str] = None) -> logging.Logger:

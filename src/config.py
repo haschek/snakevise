@@ -73,7 +73,9 @@ class ConfigResolver:
             if lp_path.is_file():
                 try:
                     with open(lp_path, "r", encoding="utf-8") as f:
-                        active_conf.update(json.load(f))
+                        project_data = json.load(f)
+                        active_conf.update(project_data)
+                        active_conf["_project_root"] = lp_path.parent
                 except Exception as e:
                     logger.error(f"Failed to load project file: {e}")
 
