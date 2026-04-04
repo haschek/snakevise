@@ -25,7 +25,8 @@ dependencies = [
 dev = [
     "ruff>=0.1.0",
     "pre-commit>=3.0.0",
-    "pymarkdownlnt>=0.9.11"
+    "pymarkdownlnt>=0.9.11",
+    "pytest>=7.0.0"
 ]
 
 [project.urls]

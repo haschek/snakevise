@@ -1,4 +1,4 @@
-.PHONY: install install-dev lint lint-python lint-md format help
+.PHONY: install install-dev lint lint-python lint-md format test help
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "  lint-python  Run ruff linter with auto-fix"
 	@echo "  lint-md      Run markdownlint with auto-fix"
 	@echo "  format       Run code formatters"
+	@echo "  test         Run tests with pytest"
 
 install:
 	pip install .
@@ -27,3 +28,6 @@ lint-md:
 
 format:
 	ruff format .
+
+test:
+	pytest tests/
