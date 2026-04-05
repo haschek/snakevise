@@ -1,4 +1,4 @@
-.PHONY: install install-dev lint lint-python lint-md format test help
+.PHONY: install install-dev lint lint-python lint-md format test list-fonts help
 
 # Default target
 help:
@@ -10,6 +10,7 @@ help:
 	@echo "  lint-md      Run markdownlint with auto-fix"
 	@echo "  format       Run code formatters"
 	@echo "  test         Run tests with pytest"
+	@echo "  list-fonts   Display available MoviePy fonts"
 
 install:
 	pip install .
@@ -31,3 +32,6 @@ format:
 
 test:
 	pytest tests/
+
+list-fonts:
+	python3 -m src.list_fonts

@@ -13,5 +13,10 @@ def apply(clip: VideoClip, strength: float, bpm: float) -> VideoClip:
         for t in np.arange(0, clip.duration, chunk_len)
         if min(t + chunk_len, clip.duration) - t > 0.001
     ]
+    if not chunks:
+        return clip
     random.shuffle(chunks)
-    return concatenate_videoclips(chunks)
+    try:
+        return concatenate_videoclips(chunks)
+    except Exception:
+        return clip

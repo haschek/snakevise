@@ -30,6 +30,12 @@ class RenderConfig:
     codec: str
     optimize: bool
     audio_path: Optional[Path]
+    subtitles_path: Optional[Path]
+    subtitle_fonts: List[Optional[str]]
+    subtitle_fontsizes: List[float]
+    subtitle_strokewidths: List[float]
+    subtitle_colors: List[str]
+    subtitle_stroke_colors: List[str]
     target_duration: Optional[float]
     fade_in: float  # in Seconds
     fade_out: float  # in Seconds

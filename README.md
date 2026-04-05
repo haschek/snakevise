@@ -91,12 +91,10 @@ You can save your current configuration (including all inputs, vfx settings, and
 ### Input Sources
 
 - `--input`: Path to media. Format: `FILE:START:END:BPM:BEATS`. Supports globs.
+- `--audio`: Path to a master audio file. Sets target duration to audio length.
 - `--preset`: Load a built-in style or path to a JSON preset file.
-- `--saveproject`: Path to save the current configuration as JSON.
 - `--loadproject`: Path to load a configuration from a JSON file.
 - `--modus`: Sequencing algorithm. Options: `random`, `linear`, `random-linear`, `linear-random`.
-- `--bpm`: Global BPM for the project.
-- `--snippetbeats`: Default beat range for snippets (e.g., `4..8`).
 
 ### Output Settings
 
@@ -108,12 +106,14 @@ You can save your current configuration (including all inputs, vfx settings, and
 - `--log`: Path to a log file.
 - `--dry-run`: Simulation mode. Prints the timeline without rendering.
 - `--seed`: Random seed for reproducibility.
+- `--saveproject`: Path to save the current configuration as JSON.
 
 ### Timing & Audio
 
-- `--audio`: Path to a master audio file. Sets target duration to audio length.
 - `--duration`: Target total duration in seconds.
 - `--length`: Target total duration in Beats.
+- `--bpm`: Global BPM for the project.
+- `--snippetbeats`: Default beat range for snippets (e.g., `4..8`).
 
 ### VFX & Transitions
 
@@ -125,6 +125,80 @@ You can save your current configuration (including all inputs, vfx settings, and
 - `--fadein`: Fade-in duration in Beats.
 - `--fadeout`: Fade-out duration in Beats.
 - `--fadecolor`: Hex color for fades (default: `#000000`).
+
+---
+
+## 💬 Subtitle Rendering (WebVTT)
+
+SnakeVISE supports overlaying text onto the final video using the WebVTT format.
+This is ideal for lyrics, titles, or commentary that needs to be perfectly synced with the rhythmic montage.
+
+- `--subtitles`: Path to a WebVTT file for overlaying text onto the final video.
+- `--stfont`: Name of the font(s) to use for subtitles (default: `Arial`).
+  - Supports multiple values: `--stfont Arial --stfont Courier`.
+  - Supports comma-separated: `--stfont "Arial, Verdana, Courier"`.
+  - Supports random selection: `--stfont RANDOM:5` picks 5 random compatible fonts from your system.
+  - If multiple fonts are provided, a random one is chosen for each subtitle line.
+  - Use `make list-fonts` to see available options.
+- `--stfontsize`: Font size(s) for subtitles (default: `48`).
+  - Supports multiple values: `--stfontsize 40 --stfontsize 60`.
+  - Supports comma-separated: `--stfontsize "40, 50, 60"`.
+  - Supports random range: `--stfontsize RANDOM:40..80:5` (picks 5 random sizes between 40 and 80).
+  - If multiple values are provided, a random one is chosen for each line.
+- `--ststrokewidth`: Stroke width(s) for subtitles (default: `1.5`).
+  - Supports multiple values: `--ststrokewidth 1 --ststrokewidth 3`.
+  - Supports comma-separated: `--ststrokewidth "1, 1.5, 2"`.
+  - Supports random range: `--ststrokewidth RANDOM:1..4:3` (picks 3 random widths between 1 and 4).
+  - If multiple values are provided, a random one is chosen for each line.
+- `--stcolor`: Text color(s) for subtitles (default: `white`).
+  - Supports multiple values: `--stcolor white --stcolor yellow`.
+  - Supports comma-separated: `--stcolor "white, #FFFF00"`.
+  - Supports random selection: `--stcolor RANDOM:5` picks 5 random colors.
+- `--stscolor`: Stroke color(s) for subtitles (default: `black`).
+  - Same format as `--stcolor`.
+
+### Supported Features
+
+- **Standard Timing**: Cues are rendered at their specified `START --> END` times. Supports both `MM:SS.mmm` and `HH:MM:SS.mmm`.
+- **Positioning**: Use the `align` and `line` settings in the cue header.
+  - `align:left`, `align:right`, `align:center` (horizontal).
+  - `line:top`, `line:middle`, `line:bottom` (vertical).
+- **Sizing**: Use the `size` setting to define the width of the subtitle area as a percentage of the video width (e.g., `size:50%`). Default is 90%.
+- **Formatting**: Supports standard HTML-like tags (case-insensitive):
+  - `<b>...</b>` or `<strong>...</strong>` for **Bold** text.
+  - `<i>...</i>` or `<em>...</em>` for *Italic* text.
+- **Dry Run Support**: Use `--dry-run` to see the calculated subtitle plan and positions in the log without rendering the video.
+- **Dynamic Sizing**: Subtitles are automatically wrapped and sized to fit within 90% of the video width.
+- **Advanced Font Support**:
+  - Use `--stfont` to specify one or multiple system fonts.
+  - Mix fonts: `--stfont Arial --stfont Courier` (randomly chosen per line).
+  - Use comma lists: `--stfont "Arial, Verdana, Courier"`.
+  - Chaos Mode: Use `--stfont RANDOM:3` to select 3 random fonts from the available inventory.
+  - **Automatic Validation**: SnakeVISE proactively tests each font for compatibility. If a chosen font is broken or missing, it automatically falls back to other working alternatives.
+  - Use `make list-fonts` to see compatible fonts on your system.
+
+### Example WebVTT File
+
+Save this as `lyrics.vtt`:
+
+```vtt
+WEBVTT
+
+00:00.500 --> 00:02.000 align:left line:top
+<b>SNAKEVISE</b> - THE VIBE
+
+00:02.500 --> 00:05.000 align:center line:middle
+<i>Procedural Video Generator</i>
+
+00:06.000 --> 00:08.000 align:right line:bottom
+Created with <u>Gemini CLI</u>
+```
+
+To render with these subtitles:
+
+```bash
+python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
+```
 
 ---
 

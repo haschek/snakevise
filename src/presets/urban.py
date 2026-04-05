@@ -15,4 +15,11 @@ CONFIG: Dict[str, Any] = {
     "fadein": 0,
     "fadeout": 1,
     "vfx_order": "random",
+    "subtitle_fonts": [
+        "RANDOM:3"
+    ],  # Favor bold/heavy if possible, but RANDOM:3 gives variety
+    "subtitle_fontsizes": [72.0, 84.0, 96.0, 110.0],
+    "subtitle_strokewidths": [3.0, 4.5, 6.0],
+    "subtitle_colors": ["white", "#FFFF00"],  # White, Yellow
+    "subtitle_stroke_colors": ["black"],
 }

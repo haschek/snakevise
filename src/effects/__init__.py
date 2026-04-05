@@ -148,9 +148,12 @@ class EffectEngine:
         }
 
         for fx in vfx:
-            s = fx["strength"]
+            s = fx.get("strength", 0)
             name = fx["name"]
             if name in dispatch:
-                clip = dispatch[name](clip, s)
+                try:
+                    clip = dispatch[name](clip, s)
+                except Exception as e:
+                    raise RuntimeError(f"Effect '{name}' failed: {e}") from e
 
         return clip

@@ -36,11 +36,13 @@ def apply(clip: VideoClip, strength: float, fade_color_hex: str) -> VideoClip:
         ).astype(np.uint8)
         s_im = PIL.Image.fromarray(f).resize((cols, rows), PIL.Image.BILINEAR)
         sg, sr = np.array(s_im.convert("L")), np.array(s_im)
-        aim = PIL.Image.new("RGB", (cols * cw, rows * ch), color=bg)
+        # Use actual shape of the resized array to avoid indexing errors
+        actual_rows, actual_cols = sg.shape
+        aim = PIL.Image.new("RGB", (actual_cols * cw, actual_rows * ch), color=bg)
         dr = PIL.ImageDraw.Draw(aim)
-        for r in range(rows):
+        for r in range(actual_rows):
             yp = r * ch
-            for c in range(cols):
+            for c in range(actual_cols):
                 dr.text(
                     (c * cw, yp),
                     chars[int((sg[r, c] / 255.0) * (lch - 1))],

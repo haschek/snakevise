@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-from .presets import PRESETS
 
 # --- SYSTEM DEFAULTS ---
 DEFAULTS: Dict[str, Any] = {
@@ -16,11 +15,19 @@ DEFAULTS: Dict[str, Any] = {
     "fadein": 0,
     "fadeout": 0,
     "fadecolor": "#000000",
+    "output": "output.mp4",
+    "temp": "tempsnippets",
     "resolution": "1920x1080",
     "fps": 24,
     "codec": "libx264",
     "optimize": False,
     "audio_path": None,
+    "subtitles_path": None,
+    "subtitle_fonts": [],
+    "subtitle_fontsizes": [48.0],
+    "subtitle_strokewidths": [1.5],
+    "subtitle_colors": ["white"],
+    "subtitle_stroke_colors": ["black"],
     "duration": None,
     "length_beats": None,
     "seed": None,

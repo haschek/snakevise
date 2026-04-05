@@ -7,6 +7,7 @@ from pathlib import Path
 
 import argcomplete
 import numpy as np
+import webvtt
 from moviepy.editor import AudioFileClip
 
 from .config import ConfigResolver
@@ -59,23 +60,55 @@ def main() -> None:
     )
 
     g_out = parser.add_argument_group("Output Settings")
-    g_out.add_argument(
-        "--output", type=Path, default=Path("output.mp4"), help="Output filename"
-    )
-    g_out.add_argument(
-        "--res", type=parse_resolution, default="1920x1080:24", help="WxH:FPS"
-    )
-    g_out.add_argument("--codec", type=str, default="libx264", help="Video Codec")
+    g_out.add_argument("--output", type=Path, help="Output filename")
+    g_out.add_argument("--res", type=parse_resolution, help="WxH:FPS")
+    g_out.add_argument("--codec", type=str, help="Video Codec")
     g_out.add_argument("--optimize", action="store_true", help="Enable CRF Encoding")
     g_out.add_argument(
-        "--temp", type=Path, default=Path("tempsnippets"), help="Temp directory"
+        "--no-optimize",
+        dest="optimize",
+        action="store_false",
+        help="Disable CRF Encoding",
     )
+    g_out.set_defaults(optimize=None)
+    g_out.add_argument("--temp", type=Path, help="Temp directory")
     g_out.add_argument("--log", type=str, help="Path to log file")
     g_out.add_argument("--dry-run", action="store_true", help="Simulate only")
     g_out.add_argument("--seed", type=int, help="Random seed for reproducibility")
 
     g_time = parser.add_argument_group("Timing & Audio")
     g_time.add_argument("--audio", type=Path, help="Master Audio File path")
+    g_time.add_argument("--subtitles", type=Path, help="WebVTT Subtitles path")
+    g_time.add_argument(
+        "--stfont",
+        type=str,
+        action="append",
+        help="Font(s) for subtitles. Can be multiple, comma-separated, or RANDOM:n",
+    )
+    g_time.add_argument(
+        "--stfontsize",
+        type=str,
+        action="append",
+        help="Font size(s) for subtitles. Can be multiple or comma-separated.",
+    )
+    g_time.add_argument(
+        "--ststrokewidth",
+        type=str,
+        action="append",
+        help="Stroke width(s) for subtitles. Can be multiple or comma-separated.",
+    )
+    g_time.add_argument(
+        "--stcolor",
+        type=str,
+        action="append",
+        help="Text color(s) for subtitles. Can be multiple, comma-separated, or RANDOM:n.",
+    )
+    g_time.add_argument(
+        "--stscolor",
+        type=str,
+        action="append",
+        help="Stroke color(s) for subtitles. Can be multiple, comma-separated, or RANDOM:n.",
+    )
     g_time.add_argument("--duration", type=float, help="Target duration in seconds")
     g_time.add_argument("--length", type=float, help="Target duration in Beats")
 
@@ -108,9 +141,7 @@ def main() -> None:
     )
     g_vfx.add_argument("--fadein", type=int, help="Fade-in duration in Beats")
     g_vfx.add_argument("--fadeout", type=int, help="Fade-out duration in Beats")
-    g_vfx.add_argument(
-        "--fadecolor", type=str, default="#000000", help="Hex color for fades"
-    )
+    g_vfx.add_argument("--fadecolor", type=str, help="Hex color for fades")
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
@@ -158,7 +189,14 @@ def main() -> None:
                     save_conf["audio_path"], save_dir
                 )
 
+            # Relativize subtitles_path
+            if save_conf.get("subtitles_path"):
+                save_conf["subtitles_path"] = relativize_path(
+                    save_conf["subtitles_path"], save_dir
+                )
+
             # Relativize inputs
+
             if save_conf.get("inputs"):
                 rel_inputs = []
                 for inp_str in save_conf["inputs"]:
@@ -174,6 +212,9 @@ def main() -> None:
             logger.info(f"Project configuration saved to: {args.saveproject}")
         except Exception as e:
             logger.error(f"Failed to save project: {e}")
+
+    # Expand dynamic variables (RANDOM:...) into concrete lists
+    active_conf = ConfigResolver.expand_dynamic_vars(active_conf)
 
     # Prep Render Config
     w, h = map(int, active_conf["resolution"].lower().split("x"))
@@ -196,6 +237,14 @@ def main() -> None:
         audio_path=resolve_path(active_conf["audio_path"], project_root)
         if active_conf.get("audio_path")
         else None,
+        subtitles_path=resolve_path(active_conf["subtitles_path"], project_root)
+        if active_conf.get("subtitles_path")
+        else None,
+        subtitle_fonts=active_conf["subtitle_fonts"],
+        subtitle_fontsizes=active_conf["subtitle_fontsizes"],
+        subtitle_strokewidths=active_conf["subtitle_strokewidths"],
+        subtitle_colors=active_conf["subtitle_colors"],
+        subtitle_stroke_colors=active_conf["subtitle_stroke_colors"],
         target_duration=None,
         fade_in=active_conf["fadein"] * global_beat_dur,
         fade_out=active_conf["fadeout"] * global_beat_dur,
@@ -203,6 +252,22 @@ def main() -> None:
         dry_run=args.dry_run,
         bpm=active_conf["bpm"],
     )
+
+    if render_config.subtitles_path:
+        if not render_config.subtitles_path.exists():
+            logger.error(f"Subtitles file not found: {render_config.subtitles_path}")
+            return
+        try:
+            # Validate basic WebVTT structure
+            webvtt.read(str(render_config.subtitles_path))
+        except Exception as e:
+            logger.error(
+                f"Malformed Subtitles file ({render_config.subtitles_path.name}): {e}"
+            )
+            logger.error(
+                "Please ensure the file is a valid WebVTT format (starting with 'WEBVTT')."
+            )
+            return
 
     if render_config.audio_path:
         if not render_config.audio_path.exists():
@@ -273,6 +338,8 @@ def main() -> None:
 
     # Render
     if args.dry_run:
+        renderer = Renderer(render_config)
+        renderer.plan_subtitles()
         logger.info("Dry run finished. Exiting.")
         return
 
