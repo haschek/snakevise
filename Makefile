@@ -34,4 +34,4 @@ test:
 	pytest tests/
 
 list-fonts:
-	python3 -m src.list_fonts
+	python3 -m src.list_fonts $(ARGS)

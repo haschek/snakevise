@@ -1,11 +1,24 @@
-from src.utils import get_compatible_fonts
+import argparse
+from src.utils import get_compatible_fonts, check_font_renderable
 
 
 def list_fonts():
+    parser = argparse.ArgumentParser(description="List available fonts for SnakeVISE.")
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Test each font for usability with ImageMagick.",
+    )
+    args = parser.parse_args()
+
     try:
         compatible = get_compatible_fonts()
 
-        print("Available Fonts (with Bold and Italic variants):")
+        header = "Available Fonts (with Bold and Italic variants)"
+        if args.test:
+            header += " [Usability Tested]"
+
+        print(header + ":")
         print("-" * 60)
 
         if not compatible:
@@ -20,7 +33,14 @@ def list_fonts():
             return
 
         for base in compatible:
-            print(base)
+            if args.test:
+                if check_font_renderable(base):
+                    print(f"[OK] {base}")
+                else:
+                    # Skip broken fonts when testing is enabled
+                    pass
+            else:
+                print(base)
 
     except Exception as e:
         print(f"Error listing fonts: {e}")

@@ -140,6 +140,7 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
   - Supports random selection: `--stfont RANDOM:5` picks 5 random compatible fonts from your system.
   - If multiple fonts are provided, a random one is chosen for each subtitle line.
   - Use `make list-fonts` to see available options.
+  - Use `make list-fonts ARGS="--test"` to verify which fonts are actually renderable on your system.
 - `--stfontsize`: Font size(s) for subtitles (default: `48`).
   - Supports multiple values: `--stfontsize 40 --stfontsize 60`.
   - Supports comma-separated: `--stfontsize "40, 50, 60"`.
