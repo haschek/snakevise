@@ -180,8 +180,9 @@ def main() -> None:
         try:
             save_dir = args.saveproject.parent.resolve()
             save_conf = active_conf.copy()
-            # Don't save internal helper
+            # Don't save internal helper or temporary directory
             save_conf.pop("_project_root", None)
+            save_conf.pop("temp", None)
 
             # Relativize audio_path
             if save_conf.get("audio_path"):
@@ -195,11 +196,9 @@ def main() -> None:
                     save_conf["subtitles_path"], save_dir
                 )
 
-            # Relativize output and temp
+            # Relativize output
             if save_conf.get("output"):
                 save_conf["output"] = relativize_path(save_conf["output"], save_dir)
-            if save_conf.get("temp"):
-                save_conf["temp"] = relativize_path(save_conf["temp"], save_dir)
 
             # Relativize inputs
 

@@ -41,8 +41,9 @@ def test_project_load_resolves_relative_paths(tmp_path):
     # This just tests the resolver part
     config = ConfigResolver.resolve(args)
     assert config["_project_root"] == proj_dir
-    assert "data/clip.mp4:0:0:120:4..8" in config["inputs"]
-    assert config["audio_path"] == "data/audio.mp3"
+    # Paths are now resolved to absolute when loaded
+    assert str(video_file) + ":0:0:120:4..8" in config["inputs"]
+    assert config["audio_path"] == str((data_dir / "audio.mp3").resolve())
 
 
 def test_relativize_on_save(tmp_path):

@@ -10,7 +10,7 @@ DEFAULTS: Dict[str, Any] = {
     "vfx": [],
     "vfx_chance": 20,
     "vfx_intensity": "1..3",
-    "vfx_maximum": 1,
+    "vfx_maximum": None,
     "vfx_order": "linear",
     "fadein": 0,
     "fadeout": 0,

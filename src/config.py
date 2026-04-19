@@ -6,7 +6,7 @@ from typing import Any, Dict, Tuple
 
 from .constants import DEFAULTS
 from .presets import PRESETS
-from .utils import get_compatible_fonts, parse_int_range_string
+from .utils import get_compatible_fonts, parse_int_range_string, resolve_path
 
 logger = logging.getLogger("snakevise")
 
@@ -70,13 +70,41 @@ class ConfigResolver:
 
         # 2. Project File
         if args.loadproject:
-            lp_path = Path(args.loadproject)
+            lp_path = Path(args.loadproject).resolve()
             if lp_path.is_file():
                 try:
                     with open(lp_path, "r", encoding="utf-8") as f:
                         project_data = json.load(f)
+                        project_root = lp_path.parent
+
+                        # Resolve relative paths in project file against project root
+                        # This ensures paths are absolute in memory
+                        if project_data.get("audio_path"):
+                            project_data["audio_path"] = str(
+                                resolve_path(project_data["audio_path"], project_root)
+                            )
+                        if project_data.get("subtitles_path"):
+                            project_data["subtitles_path"] = str(
+                                resolve_path(
+                                    project_data["subtitles_path"], project_root
+                                )
+                            )
+                        if project_data.get("output"):
+                            project_data["output"] = str(
+                                resolve_path(project_data["output"], project_root)
+                            )
+
+                        if project_data.get("inputs"):
+                            res_inputs = []
+                            for inp in project_data["inputs"]:
+                                parts = inp.split(":")
+                                if parts:
+                                    parts[0] = str(resolve_path(parts[0], project_root))
+                                res_inputs.append(":".join(parts))
+                            project_data["inputs"] = res_inputs
+
                         active_conf.update(project_data)
-                        active_conf["_project_root"] = lp_path.parent
+                        active_conf["_project_root"] = project_root
                 except Exception as e:
                     logger.error(f"Failed to load project file: {e}")
 
@@ -212,6 +240,47 @@ class ConfigResolver:
             parts = [p.strip() for p in str(s).split(",") if p.strip()]
             for p in parts:
                 final_sizes.extend(expand_random_numeric_range(p, precision=1))
+
+        expanded["subtitle_fontsizes"] = final_sizes or [48.0]
+
+        # 3. Expand subtitle_strokewidths
+        raw_widths = expanded.get("subtitle_strokewidths", [1.5])
+        if not isinstance(raw_widths, list):
+            raw_widths = [raw_widths]
+
+        final_widths = []
+        for w in raw_widths:
+            parts = [p.strip() for p in str(w).split(",") if p.strip()]
+            for p in parts:
+                final_widths.extend(expand_random_numeric_range(p, precision=2))
+
+        expanded["subtitle_strokewidths"] = final_widths or [1.5]
+
+        # 4. Expand subtitle_colors
+        raw_colors = expanded.get("subtitle_colors", ["white"])
+        if not isinstance(raw_colors, list):
+            raw_colors = [raw_colors]
+
+        final_colors = []
+        for c in raw_colors:
+            parts = [p.strip() for p in str(c).split(",") if p.strip()]
+            for p in parts:
+                final_colors.extend(expand_random_colors(p))
+        expanded["subtitle_colors"] = final_colors or ["white"]
+
+        # 5. Expand subtitle_stroke_colors
+        raw_scolors = expanded.get("subtitle_stroke_colors", ["black"])
+        if not isinstance(raw_scolors, list):
+            raw_scolors = [raw_scolors]
+
+        final_scolors = []
+        for sc in raw_scolors:
+            parts = [p.strip() for p in str(sc).split(",") if p.strip()]
+            for p in parts:
+                final_scolors.extend(expand_random_colors(p))
+        expanded["subtitle_stroke_colors"] = final_scolors or ["black"]
+
+        return expanded
 
         expanded["subtitle_fontsizes"] = final_sizes or [48.0]
 

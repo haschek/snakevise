@@ -214,13 +214,14 @@ python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
 | `mirror` | Horizontal, vertical, or quad mirroring. |
 | `grain` | Adds procedural film grain/noise. |
 | `speed` | Procedural speed ramping within the snippet. |
-| `blackwhite` | High-contrast black and white filter. |
 | `posterize` | Reduces the number of colors for a retro/artistic look. |
 | `reverse` | Plays a portion or the entirety of the snippet backwards. |
 | `stopmotion` | Lowers the effective framerate for a jerky, rhythmic feel. |
 | `pixelize` | Low-res pixel art effect with dynamic scaling. |
 | `oldmovie` | Adds vignette, tinting, and flicker for a vintage look. |
 | `colorshift` | Dynamic HSV hue rotation. |
+| `grayscale` | Desaturates the video (10% at strength 1, 100% at strength 10). |
+| `contrast` | Increases video contrast (10% increase per weight, monotone at strength 10). |
 | `shutterecho` | Ghosting effect by blending current frames with previous ones. |
 | `tvscreen` | Simulated CRT scanlines, static, and signal interference. |
 | `newspaper` | Halftone dot pattern reminiscent of print media. |

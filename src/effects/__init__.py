@@ -5,12 +5,13 @@ from moviepy.editor import VideoClip
 
 from .video import (
     asciiart,
-    blackwhite,
     colorshift,
+    contrast,
     dataglitch,
     glitchchroma,
     glitchmotion,
     grain,
+    grayscale,
     mirror,
     newspaper,
     oldmovie,
@@ -38,13 +39,14 @@ class EffectEngine:
         "mirror",
         "grain",
         "speed",
-        "blackwhite",
         "posterize",
         "reverse",
         "stopmotion",
         "pixelize",
         "oldmovie",
         "colorshift",
+        "grayscale",
+        "contrast",
         "shutterecho",
         "tvscreen",
         "newspaper",
@@ -84,6 +86,7 @@ class EffectEngine:
             else:
                 processed_configs.append(c)
 
+        guaranteed = []
         candidates = []
         for fx in processed_configs:
             if fx["name"] != "none" and random.random() * 100 <= fx["chance"]:
@@ -91,15 +94,24 @@ class EffectEngine:
                 actual_strength = (
                     min_s if min_s == max_s else random.uniform(min_s, max_s)
                 )
-                candidates.append({"name": fx["name"], "strength": actual_strength})
+                res = {"name": fx["name"], "strength": actual_strength}
+                if fx["chance"] >= 100:
+                    guaranteed.append(res)
+                else:
+                    candidates.append(res)
 
         if order == "random":
             random.shuffle(candidates)
 
         if max_limit is not None:
-            planned = candidates[:max_limit]
+            planned_probabilistic = candidates[:max_limit]
         else:
-            planned = candidates
+            planned_probabilistic = candidates
+
+        planned = guaranteed + planned_probabilistic
+
+        if order == "random":
+            random.shuffle(planned)
 
         return planned
 
@@ -126,7 +138,6 @@ class EffectEngine:
         # Dispatch table for effects mapping to their modular apply functions
         dispatch = {
             "mirror": lambda c, s: mirror.apply(c, s),
-            "blackwhite": lambda c, s: blackwhite.apply(c, s),
             "speed": lambda c, s: speed.apply(c, s),
             "zoomin": lambda c, s: zoomin.apply(c, s),
             "zoomout": lambda c, s: zoomout.apply(c, s),
@@ -138,6 +149,8 @@ class EffectEngine:
             "pixelize": lambda c, s: pixelize.apply(c, s),
             "oldmovie": lambda c, s: oldmovie.apply(c, s, fade_color),
             "colorshift": lambda c, s: colorshift.apply(c, s),
+            "grayscale": lambda c, s: grayscale.apply(c, s),
+            "contrast": lambda c, s: contrast.apply(c, s),
             "shutterecho": lambda c, s: shutterecho.apply(c, s),
             "glitchchroma": lambda c, s: glitchchroma.apply(c, s),
             "tvscreen": lambda c, s: tvscreen.apply(c, s),
