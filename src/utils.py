@@ -226,7 +226,7 @@ def resolve_path(path_str: str, base_dir: Optional[Path] = None) -> Path:
 
     # 1. Home path expansion
     if path_str.startswith("~"):
-        return path.expanduser()
+        return path.expanduser().absolute()
 
     # 2. Absolute path
     if path.is_absolute():
@@ -234,9 +234,9 @@ def resolve_path(path_str: str, base_dir: Optional[Path] = None) -> Path:
 
     # 3. Relative path
     if base_dir:
-        return (base_dir / path).resolve()
+        return (base_dir / path).absolute()
 
-    return path.resolve()
+    return path.absolute()
 
 
 def parse_sub_settings(settings: str) -> Tuple[str, str]:
@@ -277,17 +277,12 @@ def relativize_path(path_str: str, base_dir: Path) -> str:
         A string representation of the relative path.
     """
     try:
-        # 1. Resolve to absolute path (handling escapes and ~)
+        # Resolve to absolute path without following symlinks (logical path)
         path_str = unescape_path(path_str)
-        p = Path(path_str)
-        if path_str.startswith("~"):
-            abs_path = p.expanduser().resolve()
-        else:
-            abs_path = p.resolve()
+        abs_path = os.path.abspath(os.path.expanduser(path_str))
+        abs_base = os.path.abspath(str(base_dir))
 
-        abs_base = base_dir.resolve()
-
-        # 2. Get relative path from base_dir
+        # Get relative path from base_dir
         return os.path.relpath(abs_path, abs_base)
     except Exception:
         return path_str

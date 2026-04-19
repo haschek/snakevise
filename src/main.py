@@ -178,7 +178,8 @@ def main() -> None:
     # Save Project
     if args.saveproject:
         try:
-            save_dir = args.saveproject.parent.resolve()
+            save_path = Path(args.saveproject).expanduser().absolute()
+            save_dir = save_path.parent
             save_conf = active_conf.copy()
             # Don't save internal helper or temporary directory
             save_conf.pop("_project_root", None)
@@ -212,9 +213,9 @@ def main() -> None:
                     rel_inputs.append(":".join(parts))
                 save_conf["inputs"] = rel_inputs
 
-            with open(args.saveproject, "w", encoding="utf-8") as f:
+            with open(save_path, "w", encoding="utf-8") as f:
                 json.dump(save_conf, f, indent=4)
-            logger.info(f"Project configuration saved to: {args.saveproject}")
+            logger.info(f"Project configuration saved to: {save_path}")
         except Exception as e:
             logger.error(f"Failed to save project: {e}")
 

@@ -6,7 +6,12 @@ from typing import Any, Dict, Tuple
 
 from .constants import DEFAULTS
 from .presets import PRESETS
-from .utils import get_compatible_fonts, parse_int_range_string, resolve_path
+from .utils import (
+    get_compatible_fonts,
+    parse_int_range_string,
+    resolve_path,
+    unescape_path,
+)
 
 logger = logging.getLogger("snakevise")
 
@@ -70,28 +75,35 @@ class ConfigResolver:
 
         # 2. Project File
         if args.loadproject:
-            lp_path = Path(args.loadproject).resolve()
+            lp_path = Path(args.loadproject).expanduser().absolute()
             if lp_path.is_file():
                 try:
                     with open(lp_path, "r", encoding="utf-8") as f:
                         project_data = json.load(f)
                         project_root = lp_path.parent
+                        logger.info(f"Loaded project: {lp_path}")
 
                         # Resolve relative paths in project file against project root
                         # This ensures paths are absolute in memory
                         if project_data.get("audio_path"):
                             project_data["audio_path"] = str(
-                                resolve_path(project_data["audio_path"], project_root)
+                                resolve_path(
+                                    unescape_path(project_data["audio_path"]),
+                                    project_root,
+                                )
                             )
                         if project_data.get("subtitles_path"):
                             project_data["subtitles_path"] = str(
                                 resolve_path(
-                                    project_data["subtitles_path"], project_root
+                                    unescape_path(project_data["subtitles_path"]),
+                                    project_root,
                                 )
                             )
                         if project_data.get("output"):
                             project_data["output"] = str(
-                                resolve_path(project_data["output"], project_root)
+                                resolve_path(
+                                    unescape_path(project_data["output"]), project_root
+                                )
                             )
 
                         if project_data.get("inputs"):
@@ -99,7 +111,11 @@ class ConfigResolver:
                             for inp in project_data["inputs"]:
                                 parts = inp.split(":")
                                 if parts:
-                                    parts[0] = str(resolve_path(parts[0], project_root))
+                                    parts[0] = str(
+                                        resolve_path(
+                                            unescape_path(parts[0]), project_root
+                                        )
+                                    )
                                 res_inputs.append(":".join(parts))
                             project_data["inputs"] = res_inputs
 
@@ -107,6 +123,8 @@ class ConfigResolver:
                         active_conf["_project_root"] = project_root
                 except Exception as e:
                     logger.error(f"Failed to load project file: {e}")
+            else:
+                logger.error(f"Project file not found: {lp_path}")
 
         # 3. CLI Overrides
         direct_mappings = [
