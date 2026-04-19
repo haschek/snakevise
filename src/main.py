@@ -195,6 +195,12 @@ def main() -> None:
                     save_conf["subtitles_path"], save_dir
                 )
 
+            # Relativize output and temp
+            if save_conf.get("output"):
+                save_conf["output"] = relativize_path(save_conf["output"], save_dir)
+            if save_conf.get("temp"):
+                save_conf["temp"] = relativize_path(save_conf["temp"], save_dir)
+
             # Relativize inputs
 
             if save_conf.get("inputs"):
