@@ -151,6 +151,17 @@ def main() -> None:
 
     active_conf = ConfigResolver.resolve(args)
 
+    # Validate VFX
+    available_vfx = set(EffectEngine.AVAILABLE_EFFECTS) | {"all", "none"}
+    for vfx_str in active_conf.get("vfx", []):
+        vfx_name = vfx_str.split(":")[0]
+        if vfx_name not in available_vfx:
+            logger.error(f"Requested effect '{vfx_name}' does not exist.")
+            logger.error(
+                f"Valid effects are: {', '.join(sorted(EffectEngine.AVAILABLE_EFFECTS))}"
+            )
+            return
+
     # Seed Initialization
     final_seed = args.seed or active_conf.get("seed") or random.randint(0, 99999999)
     active_conf["seed"] = final_seed
