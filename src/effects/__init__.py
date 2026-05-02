@@ -5,6 +5,7 @@ from moviepy.editor import VideoClip
 
 from .video import (
     asciiart,
+    blur,
     colorshift,
     contrast,
     dataglitch,
@@ -18,6 +19,7 @@ from .video import (
     pixelize,
     posterize,
     reverse,
+    sharpen,
     shutterecho,
     speed,
     stopmotion,
@@ -34,6 +36,8 @@ class EffectEngine:
     AVAILABLE_EFFECTS = [
         "zoomin",
         "zoomout",
+        "blur",
+        "sharpen",
         "glitchchroma",
         "glitchmotion",
         "mirror",
@@ -141,6 +145,8 @@ class EffectEngine:
             "speed": lambda c, s: speed.apply(c, s),
             "zoomin": lambda c, s: zoomin.apply(c, s),
             "zoomout": lambda c, s: zoomout.apply(c, s),
+            "blur": lambda c, s: blur.apply(c, s),
+            "sharpen": lambda c, s: sharpen.apply(c, s),
             "grain": lambda c, s: grain.apply(c, s),
             "posterize": lambda c, s: posterize.apply(c, s),
             "reverse": lambda c, s: reverse.apply(c, s, bpm),

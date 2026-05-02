@@ -10,6 +10,7 @@ CONFIG: Dict[str, Any] = {
         "zoomout:25:5..10",
         "grayscale:100:4..6",
         "oldmovie:100:3..8",
+        "blur:25:2..5",
     ],
     "vfx_chance": 25,
     "vfx_intensity": "4..6",

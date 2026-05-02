@@ -209,6 +209,8 @@ python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
 | :--- | :--- |
 | `zoomin` | Smooth procedural zoom into the center of the frame. |
 | `zoomout` | Smooth procedural zoom out from the center. |
+| `blur` | Progressive Gaussian blur that increases from the midpoint to the end of the snippet. |
+| `sharpen` | Starts blurry and clears up by the midpoint (the inverse of the blur effect). |
 | `glitchchroma` | Random RGB channel shifting for a chromatic aberration look. |
 | `glitchmotion` | Slices the snippet into tiny chunks and shuffles them temporally. |
 | `mirror` | Horizontal, vertical, or quad mirroring. |

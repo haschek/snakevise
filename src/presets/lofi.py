@@ -9,6 +9,7 @@ CONFIG: Dict[str, Any] = {
         "asciiart:30:4..7",
         "stopmotion:60:2..4",
         "grayscale:40:2..5",
+        "blur:40:2..4",
     ],
     "vfx_chance": 40,
     "vfx_intensity": "2..5",

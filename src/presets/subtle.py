@@ -4,7 +4,7 @@ CONFIG: Dict[str, Any] = {
     "bpm": 120.0,
     "snippetbeats": "8..16",
     "modus": "linear",
-    "vfx": [],
+    "vfx": ["blur:15:1..2", "sharpen:15:1..2"],
     "vfx_chance": 20,
     "vfx_intensity": "1..3",
     "vfx_maximum": 1,
