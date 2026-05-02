@@ -15,7 +15,7 @@ def test_invalid_vfx_returns_error():
 def test_valid_vfx_names_pass_validation():
     """Test that valid VFX names (including 'all' and 'none') pass the initial validation."""
     # We expect this to fail later due to missing inputs, but NOT due to effect validation
-    for effect in ["zoomin", "blur", "sharpen", "colorboost", "all", "none"]:
+    for effect in ["zoomin", "blur", "sharpen", "colorboost", "invert", "all", "none"]:
         result = subprocess.run(
             ["python3", "snakevise.py", "--vfx", effect], capture_output=True, text=True
         )

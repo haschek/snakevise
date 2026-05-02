@@ -212,6 +212,7 @@ python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
 | `blur` | Progressive Gaussian blur that increases from the midpoint to the end of the snippet. |
 | `sharpen` | Starts blurry and clears up by the midpoint (the inverse of the blur effect). |
 | `colorboost` | Enhances colors; boosts vibrance (low-sat colors) at weights 1-5, adds global saturation at 6-10. |
+| `invert` | Gradually inverts the colors (10% at weight 1, 100% at weight 10). |
 | `glitchchroma` | Random RGB channel shifting for a chromatic aberration look. |
 | `glitchmotion` | Slices the snippet into tiny chunks and shuffles them temporally. |
 | `mirror` | Horizontal, vertical, or quad mirroring. |

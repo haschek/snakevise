@@ -9,6 +9,7 @@ CONFIG: Dict[str, Any] = {
         "glitchchroma:50:5..8",
         "glitchmotion:40:4..8",
         "sharpen:30:4..7",
+        "invert:20:2..5",
     ],
     "vfx_chance": 50,
     "vfx_intensity": "5..9",
