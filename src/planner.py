@@ -52,10 +52,37 @@ class MediaSource:
         self.beat_duration = 60.0 / bpm
         self.exhausted = False
 
-        if not self.is_image and self.end_limit == 0:
+        if not self.is_image:
             try:
                 with VideoFileClip(str(self.path)) as v:
-                    self.end_limit = v.duration
+                    actual_duration = v.duration
+
+                # 1. Check if start is beyond duration
+                if self.start_limit >= actual_duration:
+                    logger.warning(
+                        f"Source '{self.path.name}': Requested start time ({self.start_limit}s) "
+                        f"is beyond video duration ({actual_duration}s). Source will be skipped."
+                    )
+                    self.exhausted = True
+                    return
+
+                # 2. Cap or set end limit
+                if self.end_limit == 0 or self.end_limit > actual_duration:
+                    if self.end_limit > actual_duration:
+                        logger.warning(
+                            f"Source '{self.path.name}': Requested end time ({self.end_limit}s) "
+                            f"exceeds video duration ({actual_duration}s). Capping to duration."
+                        )
+                    self.end_limit = actual_duration
+
+                # 3. Validate range
+                if self.start_limit >= self.end_limit:
+                    logger.warning(
+                        f"Source '{self.path.name}': Invalid range ({self.start_limit}s to {self.end_limit}s). "
+                        "Source will be skipped."
+                    )
+                    self.exhausted = True
+
             except Exception as e:
                 logger.warning(f"Could not read {self.path.name}: {e}")
                 self.exhausted = True
