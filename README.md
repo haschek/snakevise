@@ -122,8 +122,8 @@ You can save your current configuration (including all inputs, vfx settings, and
 - `--vfx-intensity`: Global strength range (e.g., `1..5`).
 - `--vfx-maximum`: Max number of effects to apply per snippet.
 - `--vfx-order`: Order of effects (`linear` or `random`).
-- `--fadein`: Fade-in duration in Beats.
-- `--fadeout`: Fade-out duration in Beats.
+- `--fadein`: Fade-in duration. Integer = Beats, Suffix 's' = Seconds (e.g. `4` or `2.5s`).
+- `--fadeout`: Fade-out duration. Integer = Beats, Suffix 's' = Seconds (e.g. `4` or `2.5s`).
 - `--fadecolor`: Hex color for fades (default: `#000000`).
 
 ---
@@ -209,6 +209,7 @@ python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
 | :--- | :--- |
 | `zoomin` | Smooth procedural zoom into the center of the frame. |
 | `zoomout` | Smooth procedural zoom out from the center. |
+| `autofix` | Automatically corrects light, contrast, and color balance by analyzing the segment. |
 | `blur` | Progressive Gaussian blur that increases from the midpoint to the end of the snippet. |
 | `sharpen` | Starts blurry and clears up by the midpoint (the inverse of the blur effect). |
 | `colorboost` | Enhances colors; boosts vibrance (low-sat colors) at weights 1-5, adds global saturation at 6-10. |

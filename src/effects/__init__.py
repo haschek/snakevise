@@ -5,6 +5,7 @@ from moviepy.editor import VideoClip
 
 from .video import (
     asciiart,
+    autofix,
     blur,
     colorboost,
     colorshift,
@@ -38,6 +39,7 @@ class EffectEngine:
     AVAILABLE_EFFECTS = [
         "zoomin",
         "zoomout",
+        "autofix",
         "blur",
         "sharpen",
         "colorboost",
@@ -149,6 +151,7 @@ class EffectEngine:
             "speed": lambda c, s: speed.apply(c, s),
             "zoomin": lambda c, s: zoomin.apply(c, s),
             "zoomout": lambda c, s: zoomout.apply(c, s),
+            "autofix": lambda c, s: autofix.apply(c, s),
             "blur": lambda c, s: blur.apply(c, s),
             "sharpen": lambda c, s: sharpen.apply(c, s),
             "colorboost": lambda c, s: colorboost.apply(c, s),

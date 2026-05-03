@@ -13,7 +13,27 @@ from src.utils import (  # noqa: E402
     get_compatible_fonts,
     check_font_renderable,
     parse_sub_settings,
+    parse_duration_string,
 )
+
+
+def test_parse_duration_string():
+    # Beat duration for 120 BPM is 0.5s
+    bd = 0.5
+
+    # Beats (integers/floats as strings or numbers)
+    assert parse_duration_string("4", bd) == 2.0
+    assert parse_duration_string(4, bd) == 2.0
+    assert parse_duration_string("2.5", bd) == 1.25
+
+    # Seconds (suffix 's')
+    assert parse_duration_string("10s", bd) == 10.0
+    assert parse_duration_string("2.5s", bd) == 2.5
+    assert parse_duration_string(" 4s ", bd) == 4.0  # spacing
+
+    # Invalid
+    assert parse_duration_string("invalid", bd) == 0.0
+    assert parse_duration_string("s", bd) == 0.0
 
 
 def test_expand_random_colors_static():

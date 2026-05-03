@@ -350,6 +350,30 @@ def parse_resolution(res_str: str) -> Tuple[Tuple[int, int], int]:
         ) from e
 
 
+def parse_duration_string(val: Union[str, float, int], beat_duration: float) -> float:
+    """Parses a duration string into seconds.
+    If 's' suffix is present, treats as seconds. Otherwise treats as beats.
+
+    Args:
+        val: The value to parse (e.g. "4", "2.5s").
+        beat_duration: Duration of a single beat in seconds.
+
+    Returns:
+        Duration in seconds.
+    """
+    s = str(val).strip().lower()
+    if s.endswith("s"):
+        try:
+            return float(s[:-1])
+        except ValueError:
+            return 0.0
+
+    try:
+        return float(s) * beat_duration
+    except ValueError:
+        return 0.0
+
+
 def parse_range_string(val: Union[str, float, int]) -> Tuple[float, float]:
     """Parses a string representing a numeric range (e.g., "1..5").
 

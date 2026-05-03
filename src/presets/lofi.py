@@ -5,6 +5,7 @@ CONFIG: Dict[str, Any] = {
     "snippetbeats": "4..12",
     "modus": "linear-random",
     "vfx": [
+        "autofix:100:10",
         "tvscreen:80:3..6",
         "asciiart:30:4..7",
         "stopmotion:60:2..4",

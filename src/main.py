@@ -19,6 +19,7 @@ from .utils import (
     parse_effect_string,
     parse_range_string,
     parse_resolution,
+    parse_duration_string,
     relativize_path,
     resolve_path,
     setup_logging,
@@ -139,8 +140,14 @@ def main() -> None:
         choices=["linear", "random"],
         help="Apply effects in defined or random order",
     )
-    g_vfx.add_argument("--fadein", type=int, help="Fade-in duration in Beats")
-    g_vfx.add_argument("--fadeout", type=int, help="Fade-out duration in Beats")
+    g_vfx.add_argument(
+        "--fadein", type=str, help="Fade-in duration in Beats or Seconds (e.g. 4, 2.5s)"
+    )
+    g_vfx.add_argument(
+        "--fadeout",
+        type=str,
+        help="Fade-out duration in Beats or Seconds (e.g. 4, 2.5s)",
+    )
     g_vfx.add_argument("--fadecolor", type=str, help="Hex color for fades")
 
     argcomplete.autocomplete(parser)
@@ -263,8 +270,8 @@ def main() -> None:
         subtitle_colors=active_conf["subtitle_colors"],
         subtitle_stroke_colors=active_conf["subtitle_stroke_colors"],
         target_duration=None,
-        fade_in=active_conf["fadein"] * global_beat_dur,
-        fade_out=active_conf["fadeout"] * global_beat_dur,
+        fade_in=parse_duration_string(active_conf["fadein"], global_beat_dur),
+        fade_out=parse_duration_string(active_conf["fadeout"], global_beat_dur),
         fade_color=active_conf["fadecolor"],
         dry_run=args.dry_run,
         bpm=active_conf["bpm"],
