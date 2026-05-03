@@ -15,12 +15,12 @@ Instead of manual boilerplate, the focus was on defining the "vibe" (rhythmic, g
 ## ✨ Features
 
 - **Rhythmic Sequencing**: Slices video and images based on BPM and beat counts.
-- **20+ Visual Effects**: Including glitch, zoom, old movie, ASCII art, dataglitch, and more.
+- **25+ Visual Effects**: Including glitch, zoom, old movie, ASCII art, dataglitch, and more.
 - **Intelligent Modes**:
   - `linear`: Sequential processing of sources.
   - `random`: Full chaotic shuffle.
   - `linear-random` & `random-linear`: Hybrid sequencing strategies.
-- **Presets**: Quick-start configurations (`lofi`, `vintage`, `urban`, `chaos`).
+- **Presets**: Quick-start configurations (`subtle`, `lofi`, `vintage`, `urban`, `chaos`).
 - **Project Management**: Save and load complex render configurations as JSON.
 - **Audio Sync**: Automatically matches video duration to a master audio file.
 
