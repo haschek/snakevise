@@ -1,10 +1,11 @@
 import subprocess
+import sys
 
 
 def test_invalid_vfx_returns_error():
     """Test that an invalid VFX name returns an error."""
     result = subprocess.run(
-        ["python3", "snakevise.py", "--vfx", "nonexistent_effect"],
+        [sys.executable, "snakevise.py", "--vfx", "nonexistent_effect"],
         capture_output=True,
         text=True,
     )
@@ -26,7 +27,9 @@ def test_valid_vfx_names_pass_validation():
         "none",
     ]:
         result = subprocess.run(
-            ["python3", "snakevise.py", "--vfx", effect], capture_output=True, text=True
+            [sys.executable, "snakevise.py", "--vfx", effect],
+            capture_output=True,
+            text=True,
         )
         assert f"Requested effect '{effect}' does not exist" not in result.stdout
         assert "No input sources defined." in result.stdout
