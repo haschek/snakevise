@@ -98,13 +98,17 @@ class EffectEngine:
 
         guaranteed = []
         candidates = []
-        for fx in processed_configs:
+        for idx, fx in enumerate(processed_configs):
             if fx["name"] != "none" and random.random() * 100 <= fx["chance"]:
                 min_s, max_s = fx["strength_range"]
                 actual_strength = (
                     min_s if min_s == max_s else random.uniform(min_s, max_s)
                 )
-                res = {"name": fx["name"], "strength": actual_strength}
+                res = {
+                    "name": fx["name"],
+                    "strength": actual_strength,
+                    "_orig_idx": idx,
+                }
                 if fx["chance"] >= 100:
                     guaranteed.append(res)
                 else:
@@ -122,6 +126,11 @@ class EffectEngine:
 
         if order == "random":
             random.shuffle(planned)
+        else:
+            planned.sort(key=lambda x: x["_orig_idx"])
+
+        for p in planned:
+            p.pop("_orig_idx", None)
 
         return planned
 
