@@ -3,6 +3,7 @@ import glob
 import json
 import logging
 import random
+from collections import Counter
 from pathlib import Path
 
 import argcomplete
@@ -359,6 +360,46 @@ def main() -> None:
         f"Planning complete: {len(edl)} snippets, total: {planner.global_time:.2f}s "
         f"({planner.global_time / global_beat_dur:.1f} beats)"
     )
+
+    # Output detailed information about selected snippets
+    logger.info("\n" + "=" * 60)
+    logger.info("USED VIDEO SNIPPETS")
+    logger.info("=" * 60)
+    source_stats = Counter()
+
+    for idx, snippet in enumerate(edl, 1):
+        matching_source = next(
+            (s for s in sources if s.path == snippet.source_path), None
+        )
+        beat_dur = matching_source.beat_duration if matching_source else global_beat_dur
+        beats = snippet.duration / beat_dur
+        source_stats[snippet.source_path.name] += 1
+
+        if snippet.vfx:
+            vfx_details = []
+            for fx in snippet.vfx:
+                name = fx.get("name", "none")
+                strength = fx.get("strength")
+                if strength is not None:
+                    vfx_details.append(f"{name}:{strength:.2f}")
+                else:
+                    vfx_details.append(name)
+            vfx_str = " -> ".join(vfx_details)
+        else:
+            vfx_str = "None"
+
+        logger.info(
+            f"Snippet {idx:02d}: {snippet.source_path.name} | "
+            f"Length: {beats:.2f} beats ({snippet.duration:.2f}s) | "
+            f"Effects: {vfx_str}"
+        )
+
+    logger.info("\n" + "=" * 60)
+    logger.info("INPUT FILE STATISTICS")
+    logger.info("=" * 60)
+    for src_name, count in sorted(source_stats.items()):
+        logger.info(f"{src_name}: used {count} time(s)")
+    logger.info("=" * 60 + "\n")
 
     # Render
     if args.dry_run:
