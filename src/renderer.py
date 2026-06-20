@@ -69,6 +69,9 @@ class Renderer:
                 clip, snippet.vfx, self.cfg.bpm, self.cfg.fade_color, self.cfg.fps
             )
             temp_file = self.cfg.temp_dir / f"snip_{snippet.index:05d}.mp4"
+            temp_audio_file = (
+                self.cfg.temp_dir / f"snip_{snippet.index:05d}TEMP_MPY_wvf_snd.mp4"
+            )
 
             clip.write_videofile(
                 str(temp_file),
@@ -76,6 +79,7 @@ class Renderer:
                 codec="libx264",
                 preset="ultrafast",
                 audio_codec="aac",
+                temp_audiofile=str(temp_audio_file),
                 logger=None,
                 verbose=False,
             )
@@ -508,12 +512,16 @@ class Renderer:
             final_video = self._apply_subtitles(final_video)
             # -----------------------
 
+            temp_audio_file = (
+                self.cfg.temp_dir / f"{self.cfg.output_path.stem}TEMP_MPY_wvf_snd.mp4"
+            )
             params = {
                 "fps": self.cfg.fps,
                 "codec": self.cfg.codec,
                 "audio_codec": "aac",
                 "preset": "slower" if self.cfg.optimize else "medium",
                 "threads": 4,
+                "temp_audiofile": str(temp_audio_file),
             }
             if self.cfg.optimize:
                 params["ffmpeg_params"] = ["-crf", "26"]
