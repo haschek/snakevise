@@ -76,7 +76,7 @@ def main() -> None:
     g_out.add_argument("--temp", type=Path, help="Temp directory")
     g_out.add_argument(
         "--crop",
-        choices=["crop-to-fit", "stretch", "slideover"],
+        choices=["crop-to-fit", "stretch", "slideover", "duplicate"],
         help="Initial crop/resize method for input media (default: crop-to-fit)",
     )
     g_out.add_argument("--log", type=str, help="Path to log file")

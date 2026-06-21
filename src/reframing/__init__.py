@@ -2,7 +2,7 @@
 
 from typing import Tuple
 from moviepy.editor import VideoClip
-from . import fill, slideover
+from . import duplicate, fill, slideover
 
 
 def reframe(
@@ -22,6 +22,8 @@ def reframe(
         return fill.apply(clip, target_res)
     elif method == "slideover":
         return slideover.apply(clip, target_res)
+    elif method == "duplicate":
+        return duplicate.apply(clip, target_res)
 
     # Default fallback
     return clip.resize(newsize=target_res)
