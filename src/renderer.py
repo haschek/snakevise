@@ -41,6 +41,7 @@ class Renderer:
         Returns:
             Path to the temporary rendered file, or None on error.
         """
+        clips_to_close = []
         try:
             if not self.cfg.temp_dir.exists():
                 self.cfg.temp_dir.mkdir(parents=True, exist_ok=True)
@@ -54,20 +55,26 @@ class Renderer:
                 return None
 
             if snippet.is_image:
-                clip = ImageClip(str(snippet.source_path)).set_duration(
-                    snippet.duration
-                )
+                source_clip = ImageClip(str(snippet.source_path))
+                clips_to_close.append(source_clip)
+                clip = source_clip.set_duration(snippet.duration)
+                clips_to_close.append(clip)
             else:
-                clip = VideoFileClip(str(snippet.source_path)).subclip(
+                source_clip = VideoFileClip(str(snippet.source_path))
+                clips_to_close.append(source_clip)
+                clip = source_clip.subclip(
                     snippet.start_time, snippet.start_time + snippet.duration
                 )
+                clips_to_close.append(clip)
 
             # Reframe to target resolution
             clip = reframe(clip, target_res, method=snippet.crop)
+            clips_to_close.append(clip)
 
             clip = EffectEngine.apply(
                 clip, snippet.vfx, self.cfg.bpm, self.cfg.fade_color, self.cfg.fps
             )
+            clips_to_close.append(clip)
             temp_file = self.cfg.temp_dir / f"snip_{snippet.index:05d}.mp4"
             temp_audio_file = (
                 self.cfg.temp_dir / f"snip_{snippet.index:05d}TEMP_MPY_wvf_snd.mp4"
@@ -83,13 +90,21 @@ class Renderer:
                 logger=None,
                 verbose=False,
             )
-            clip.close()
             return temp_file
         except Exception as e:
             logger.error(
                 f"Error processing snippet {snippet.index} ({snippet.source_path.name}): {e}"
             )
             return None
+        finally:
+            for c in reversed(clips_to_close):
+                try:
+                    c.close()
+                except Exception:
+                    pass
+            import gc
+
+            gc.collect()
 
     def render_snippets(self, edl: List[Snippet]) -> List[Path]:
         """Renders all snippets in the EDL to temporary files.
@@ -198,7 +213,9 @@ class Renderer:
         except Exception as e:
             logger.error(f"Error planning subtitles: {e}")
 
-    def _apply_subtitles(self, video: VideoFileClip) -> VideoFileClip:
+    def _apply_subtitles(
+        self, video: VideoFileClip, clips_to_close: List
+    ) -> VideoFileClip:
         """Manually parses WebVTT and overlays subtitles on the video.
 
         This bypasses library limitations by using regex to extract cues and settings.
@@ -372,6 +389,7 @@ class Renderer:
                                 txt = TextClip(
                                     clean_text, font=font_variant, **font_args
                                 )
+                                clips_to_close.append(txt)
                                 used_font = font_variant
                                 break
                             except Exception:
@@ -381,6 +399,7 @@ class Renderer:
                         # Final attempt: use what MoviePy considers default (no font arg)
                         try:
                             txt = TextClip(clean_text, **font_args)
+                            clips_to_close.append(txt)
                             used_font = "system-default"
                         except Exception:
                             # Let it raise an error if even this fails
@@ -406,18 +425,19 @@ class Renderer:
                     else:
                         pos_y = "center"
 
-                    txt = (
+                    txt_final = (
                         txt.set_start(start)
                         .set_duration(duration)
                         .set_position((pos_x, pos_y))
                     )
+                    clips_to_close.append(txt_final)
 
                     logger.info(
                         f'Subtitle Cue: "{clean_text[:30]}..." | Style: {"/".join(filter(None, [is_bold and "Bold", is_italic and "Italic", is_underline and "Underline"])) or "Normal"} | '
                         f"Font: {used_font} | Size: {base_size} | Stroke: {base_stroke} | Color: {base_color} | SColor: {base_scolor} | Align: {h_align} | Line: {v_align} | Pos: {pos_x},{pos_y}"
                     )
 
-                    subtitle_clips.append(txt)
+                    subtitle_clips.append(txt_final)
                 except Exception as cue_err:
                     logger.warning(f"Skipping subtitle cue at {start_str}: {cue_err}")
                     continue
@@ -427,7 +447,9 @@ class Renderer:
                 return video
 
             logger.info(f"Overlaying {len(subtitle_clips)} subtitle clips...")
-            return CompositeVideoClip([video] + subtitle_clips, size=video.size)
+            composite = CompositeVideoClip([video] + subtitle_clips, size=video.size)
+            clips_to_close.append(composite)
+            return composite
 
         except Exception as e:
             logger.error(f"Failed to apply subtitles: {e}")
@@ -457,8 +479,7 @@ class Renderer:
             return
 
         joined_video_path = self.cfg.temp_dir / "joined_snippets.mp4"
-        audio = None
-        final_video = None
+        clips_to_close = []
         try:
             # 1. Memory-efficient concatenation using ffmpeg concat demuxer
             logger.info(f"Joining {len(clip_paths)} snippets using ffmpeg...")
@@ -490,26 +511,33 @@ class Renderer:
 
             # 2. Load the single joined file for master effects (fades, audio, subtitles)
             logger.info("Applying master effects (audio, fades, subtitles)...")
-            final_video = VideoFileClip(str(joined_video_path))
+            joined_clip = VideoFileClip(str(joined_video_path))
+            clips_to_close.append(joined_clip)
+            final_video = joined_clip
 
             if self.cfg.audio_path:
-                audio = AudioFileClip(str(self.cfg.audio_path))
-                final_video = final_video.set_audio(audio)
+                audio_clip = AudioFileClip(str(self.cfg.audio_path))
+                clips_to_close.append(audio_clip)
+                final_video = final_video.set_audio(audio_clip)
+                clips_to_close.append(final_video)
                 if self.cfg.target_duration:
                     final_video = final_video.set_duration(self.cfg.target_duration)
+                    clips_to_close.append(final_video)
 
             fade_rgb = hex_to_rgb(self.cfg.fade_color)
             if self.cfg.fade_in > 0:
                 final_video = final_video.fadein(
                     self.cfg.fade_in, initial_color=fade_rgb
                 )
+                clips_to_close.append(final_video)
             if self.cfg.fade_out > 0:
                 final_video = final_video.fadeout(
                     self.cfg.fade_out, final_color=fade_rgb
                 )
+                clips_to_close.append(final_video)
 
             # --- Apply Subtitles ---
-            final_video = self._apply_subtitles(final_video)
+            final_video = self._apply_subtitles(final_video, clips_to_close)
             # -----------------------
 
             temp_audio_file = (
@@ -529,18 +557,20 @@ class Renderer:
             logger.info(f"Rendering final file: {self.cfg.output_path}")
             final_video.write_videofile(str(self.cfg.output_path), **params)
 
+        except Exception as e:
+            logger.critical(f"Critical error during finalization: {e}", exc_info=True)
+            raise e
+        finally:
             logger.info("Cleaning up resources...")
-            final_video.close()
-            if audio:
-                audio.close()
+            for clip in reversed(clips_to_close):
+                try:
+                    clip.close()
+                except Exception:
+                    pass
+            import gc
+
+            gc.collect()
 
             if self.cfg.temp_dir.exists():
                 shutil.rmtree(self.cfg.temp_dir)
             logger.info("Done.")
-
-        except Exception as e:
-            logger.critical(f"Critical error during finalization: {e}", exc_info=True)
-            if final_video:
-                final_video.close()
-            if audio:
-                audio.close()
