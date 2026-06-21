@@ -76,8 +76,10 @@ def main() -> None:
     g_out.add_argument("--temp", type=Path, help="Temp directory")
     g_out.add_argument(
         "--crop",
-        choices=["crop-to-fit", "stretch", "slideover", "duplicate"],
-        help="Initial crop/resize method for input media (default: crop-to-fit)",
+        action="append",
+        help="Initial crop/resize method for input media (default: crop-to-fit). "
+        "Supports multiple values and comma-separated options. "
+        "Valid choices: crop-to-fit, stretch, slideover, duplicate",
     )
     g_out.add_argument("--log", type=str, help="Path to log file")
     g_out.add_argument("--dry-run", action="store_true", help="Simulate only")
@@ -163,6 +165,14 @@ def main() -> None:
     logger.info("Initializing SnakeVISE...")
 
     active_conf = ConfigResolver.resolve(args)
+
+    # Validate crop methods
+    valid_crops = {"crop-to-fit", "stretch", "slideover", "duplicate"}
+    for crop in active_conf.get("crop", []):
+        if crop not in valid_crops:
+            logger.error(f"Requested crop method '{crop}' does not exist.")
+            logger.error(f"Valid crop methods are: {', '.join(sorted(valid_crops))}")
+            return
 
     # Validate VFX
     available_vfx = set(EffectEngine.AVAILABLE_EFFECTS) | {"all", "none"}
@@ -359,6 +369,7 @@ def main() -> None:
         vfx_configs,
         active_conf["vfx_maximum"],
         active_conf["vfx_order"],
+        active_conf["crop"],
     )
     edl = planner.create_edl(render_config.target_duration)
 
@@ -397,6 +408,7 @@ def main() -> None:
         logger.info(
             f"Snippet {idx:02d}: {snippet.source_path.name} | "
             f"Length: {beats:.2f} beats ({snippet.duration:.2f}s) | "
+            f"Crop: {snippet.crop} | "
             f"Effects: {vfx_str}"
         )
 

@@ -63,7 +63,7 @@ class Renderer:
                 )
 
             # Reframe to target resolution
-            clip = reframe(clip, target_res, method=self.cfg.crop)
+            clip = reframe(clip, target_res, method=snippet.crop)
 
             clip = EffectEngine.apply(
                 clip, snippet.vfx, self.cfg.bpm, self.cfg.fade_color, self.cfg.fps

@@ -158,6 +158,7 @@ class TimelinePlanner:
         vfx_configs: List[Dict[str, Any]],
         vfx_maximum: Optional[int],
         vfx_order: str,
+        crop_methods: List[str] = ["crop-to-fit"],
     ):
         """Initializes the planner.
 
@@ -167,6 +168,7 @@ class TimelinePlanner:
             vfx_configs: Configurations for effects.
             vfx_maximum: Max effects per snippet.
             vfx_order: 'linear' or 'random' effect application order.
+            crop_methods: List of allowed crop methods.
         """
         self.sources = sources
         self.mode = mode
@@ -174,6 +176,7 @@ class TimelinePlanner:
         self.global_time = 0.0
         self.vfx_maximum = vfx_maximum
         self.vfx_order = vfx_order
+        self.crop_methods = crop_methods
         self.edl: List[Snippet] = []
         if "-" in mode:
             self.source_mode, self.snippet_mode = mode.split("-")
@@ -315,6 +318,11 @@ class TimelinePlanner:
                 vfx_plan = EffectEngine.select_effects(
                     self.vfx_configs, self.vfx_maximum, self.vfx_order
                 )
+                crop_method = (
+                    random.choice(self.crop_methods)
+                    if self.crop_methods
+                    else "crop-to-fit"
+                )
                 snippet = Snippet(
                     index=len(self.edl) + 1,
                     source_path=source_obj.path,
@@ -322,6 +330,7 @@ class TimelinePlanner:
                     duration=segment.duration,
                     is_image=source_obj.is_image,
                     vfx=vfx_plan,
+                    crop=crop_method,
                 )
                 self.edl.append(snippet)
                 self.global_time += segment.duration

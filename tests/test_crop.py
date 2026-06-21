@@ -24,12 +24,22 @@ def test_crop_argument_resolution():
     # Test default
     args.crop = None
     config_default = ConfigResolver.resolve(args)
-    assert config_default["crop"] == "crop-to-fit"
+    assert config_default["crop"] == ["crop-to-fit"]
 
-    # Test explicit override
-    args.crop = "stretch"
+    # Test explicit single override (as a list because of action="append")
+    args.crop = ["stretch"]
     config_override = ConfigResolver.resolve(args)
-    assert config_override["crop"] == "stretch"
+    assert config_override["crop"] == ["stretch"]
+
+    # Test multiple crop overrides
+    args.crop = ["stretch", "slideover"]
+    config_multiple = ConfigResolver.resolve(args)
+    assert config_multiple["crop"] == ["stretch", "slideover"]
+
+    # Test comma-separated crop overrides
+    args.crop = ["stretch, duplicate"]
+    config_comma = ConfigResolver.resolve(args)
+    assert config_comma["crop"] == ["stretch", "duplicate"]
 
 
 def test_reframe_methods():

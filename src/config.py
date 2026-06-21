@@ -165,8 +165,11 @@ class ConfigResolver:
         if args.temp is not None:
             active_conf["temp"] = str(args.temp)
 
-        if args.crop is not None:
-            active_conf["crop"] = args.crop
+        if args.crop:
+            crops = []
+            for c in args.crop:
+                crops.extend([s.strip() for s in c.split(",") if s.strip()])
+            active_conf["crop"] = crops
 
         if args.fadecolor is not None:
             active_conf["fadecolor"] = args.fadecolor
@@ -211,6 +214,13 @@ class ConfigResolver:
             active_conf["duration"] = args.duration
         if args.length:
             active_conf["length_beats"] = args.length
+
+        # Standardize crop to a list of strings
+        crop_val = active_conf.get("crop", ["crop-to-fit"])
+        if isinstance(crop_val, str):
+            active_conf["crop"] = [s.strip() for s in crop_val.split(",") if s.strip()]
+        elif isinstance(crop_val, list):
+            active_conf["crop"] = crop_val
 
         return active_conf
 

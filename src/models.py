@@ -25,7 +25,7 @@ class RenderConfig:
 
     output_path: Path
     temp_dir: Path
-    crop: str
+    crop: List[str]
     resolution: Tuple[int, int]
     fps: int
     codec: str
@@ -65,6 +65,7 @@ class Snippet:
     duration: float
     is_image: bool
     vfx: List[Dict[str, Any]]
+    crop: str = "crop-to-fit"
     temp_file: Optional[Path] = None
 
 
