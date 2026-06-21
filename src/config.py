@@ -165,6 +165,9 @@ class ConfigResolver:
         if args.temp is not None:
             active_conf["temp"] = str(args.temp)
 
+        if args.crop is not None:
+            active_conf["crop"] = args.crop
+
         if args.fadecolor is not None:
             active_conf["fadecolor"] = args.fadecolor
 

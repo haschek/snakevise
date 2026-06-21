@@ -25,6 +25,7 @@ class RenderConfig:
 
     output_path: Path
     temp_dir: Path
+    crop: str
     resolution: Tuple[int, int]
     fps: int
     codec: str

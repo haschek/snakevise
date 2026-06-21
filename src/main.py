@@ -74,6 +74,11 @@ def main() -> None:
     )
     g_out.set_defaults(optimize=None)
     g_out.add_argument("--temp", type=Path, help="Temp directory")
+    g_out.add_argument(
+        "--crop",
+        choices=["crop-to-fit", "stretch", "slideover"],
+        help="Initial crop/resize method for input media (default: crop-to-fit)",
+    )
     g_out.add_argument("--log", type=str, help="Path to log file")
     g_out.add_argument("--dry-run", action="store_true", help="Simulate only")
     g_out.add_argument("--seed", type=int, help="Random seed for reproducibility")
@@ -255,6 +260,7 @@ def main() -> None:
     render_config = RenderConfig(
         output_path=resolve_path(str(final_output), project_root),
         temp_dir=resolve_path(str(final_temp), project_root),
+        crop=active_conf["crop"],
         resolution=(w, h),
         fps=active_conf["fps"],
         codec=active_conf["codec"],

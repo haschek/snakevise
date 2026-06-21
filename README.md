@@ -103,6 +103,7 @@ You can save your current configuration (including all inputs, vfx settings, and
 - `--codec`: Video codec (default: `libx264`).
 - `--optimize`: Enable CRF encoding for smaller file sizes.
 - `--temp`: Directory for temporary snippet storage.
+- `--crop`: Initial crop/resize method for input media. Options: `crop-to-fit` (default), `stretch`, or `slideover` (pans randomly left-to-right/right-to-left or top-to-bottom/bottom-to-top).
 - `--log`: Path to a log file.
 - `--dry-run`: Simulation mode. Prints the timeline without rendering.
 - `--seed`: Random seed for reproducibility.
