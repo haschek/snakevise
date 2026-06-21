@@ -100,8 +100,22 @@ class MediaSource:
         Returns:
             List of Segment objects.
         """
-        if self.is_image or self.exhausted:
+        if self.exhausted:
             return []
+
+        if self.is_image:
+            segments = []
+            virtual_duration = self.max_beats * self.beat_duration
+            cursor = 0.0
+            while True:
+                beats = random.randint(self.min_beats, self.max_beats)
+                duration = beats * self.beat_duration
+                if cursor + duration > virtual_duration:
+                    break
+                segments.append(Segment(self.index, 0.0, duration))
+                cursor += duration
+            return segments
+
         segments = []
         cursor = self.start_limit
         while True:
