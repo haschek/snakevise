@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 from typing import List, Optional
 
+import numpy as np
 from moviepy.editor import (
     AudioFileClip,
     CompositeVideoClip,
@@ -12,6 +13,7 @@ from moviepy.editor import (
     TextClip,
     VideoFileClip,
 )
+from PIL import Image, ImageOps
 
 from .effects import EffectEngine
 from .models import RenderConfig, Snippet
@@ -55,7 +57,19 @@ class Renderer:
                 return None
 
             if snippet.is_image:
-                source_clip = ImageClip(str(snippet.source_path))
+                try:
+                    with Image.open(snippet.source_path) as pil_img:
+                        pil_img = ImageOps.exif_transpose(pil_img)
+                        if pil_img.mode not in ("RGB", "RGBA"):
+                            pil_img = pil_img.convert("RGB")
+                        img_array = np.array(pil_img)
+                    source_clip = ImageClip(img_array)
+                except Exception as img_err:
+                    logger.warning(
+                        f"Failed to read/transpose image {snippet.source_path} using PIL, "
+                        f"falling back to MoviePy default: {img_err}"
+                    )
+                    source_clip = ImageClip(str(snippet.source_path))
                 clips_to_close.append(source_clip)
                 clip = source_clip.set_duration(snippet.duration)
                 clips_to_close.append(clip)
