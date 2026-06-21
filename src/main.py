@@ -417,6 +417,17 @@ def main() -> None:
     logger.info("=" * 60)
     for src_name, count in sorted(source_stats.items()):
         logger.info(f"{src_name}: used {count} time(s)")
+    logger.info("=" * 60)
+
+    unused_sources = sorted({s.path.name for s in sources} - set(source_stats.keys()))
+    logger.info("\n" + "=" * 60)
+    logger.info("UNUSED INPUT FILES")
+    logger.info("=" * 60)
+    if unused_sources:
+        for src_name in unused_sources:
+            logger.info(f"{src_name}")
+    else:
+        logger.info("None (all inputs were used)")
     logger.info("=" * 60 + "\n")
 
     # Render
