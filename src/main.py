@@ -267,6 +267,14 @@ def main() -> None:
     final_output = Path(active_conf.get("output", args.output))
     final_temp = Path(active_conf.get("temp", args.temp))
 
+    # Enforce cloud-ignore naming convention for the temporary directory name
+    temp_name = final_temp.name
+    if not temp_name.startswith("~"):
+        temp_name = "~" + temp_name
+    if not temp_name.endswith(".tmp"):
+        temp_name = temp_name + ".tmp"
+    final_temp = final_temp.with_name(temp_name)
+
     render_config = RenderConfig(
         output_path=resolve_path(str(final_output), project_root),
         temp_dir=resolve_path(str(final_temp), project_root),

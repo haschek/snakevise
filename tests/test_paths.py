@@ -51,3 +51,17 @@ def test_relativize_path_no_long_chains():
     target = "/tmp/project/sub/video.mp4"
     rel = relativize_path(target, base)
     assert rel == "video.mp4"
+
+
+def test_resolve_path_tilde_literal():
+    # A path starting with a tilde but not followed by a slash should not be expanded to home
+    tilde_path = "~tempsnippets.tmp"
+    resolved = resolve_path(tilde_path)
+    assert resolved == Path.cwd().absolute() / tilde_path
+
+
+def test_relativize_path_tilde_literal():
+    base = Path("/tmp/project")
+    target = "/tmp/project/~tempsnippets.tmp"
+    rel = relativize_path(target, base)
+    assert rel == "~tempsnippets.tmp"

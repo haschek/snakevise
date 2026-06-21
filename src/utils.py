@@ -224,8 +224,8 @@ def resolve_path(path_str: str, base_dir: Optional[Path] = None) -> Path:
     """
     path = Path(path_str)
 
-    # 1. Home path expansion
-    if path_str.startswith("~"):
+    # 1. Home path expansion (only if it starts with ~/ or ~\ or is exactly ~)
+    if path_str == "~" or path_str.startswith("~/") or path_str.startswith("~\\"):
         return path.expanduser().absolute()
 
     # 2. Absolute path
@@ -279,7 +279,11 @@ def relativize_path(path_str: str, base_dir: Path) -> str:
     try:
         # Resolve to absolute path without following symlinks (logical path)
         path_str = unescape_path(path_str)
-        abs_path = os.path.abspath(os.path.expanduser(path_str))
+        if path_str == "~" or path_str.startswith("~/") or path_str.startswith("~\\"):
+            expanded = os.path.expanduser(path_str)
+        else:
+            expanded = path_str
+        abs_path = os.path.abspath(expanded)
         abs_base = os.path.abspath(str(base_dir))
 
         # Get relative path from base_dir

@@ -16,7 +16,7 @@ DEFAULTS: Dict[str, Any] = {
     "fadeout": 0,
     "fadecolor": "#000000",
     "output": "output.mp4",
-    "temp": "tempsnippets",
+    "temp": "~tempsnippets.tmp",
     "crop": ["crop-to-fit"],
     "resolution": "1920x1080",
     "fps": 24,

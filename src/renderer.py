@@ -89,9 +89,9 @@ class Renderer:
                 clip, snippet.vfx, self.cfg.bpm, self.cfg.fade_color, self.cfg.fps
             )
             clips_to_close.append(clip)
-            temp_file = self.cfg.temp_dir / f"snip_{snippet.index:05d}.mp4"
+            temp_file = self.cfg.temp_dir / f"~snip_{snippet.index:05d}.tmp.mp4"
             temp_audio_file = (
-                self.cfg.temp_dir / f"snip_{snippet.index:05d}TEMP_MPY_wvf_snd.mp4"
+                self.cfg.temp_dir / f"~snip_{snippet.index:05d}TEMP_MPY_wvf_snd.tmp.mp4"
             )
 
             clip.write_videofile(
@@ -492,12 +492,12 @@ class Renderer:
             logger.error("No valid clips to concatenate.")
             return
 
-        joined_video_path = self.cfg.temp_dir / "joined_snippets.mp4"
+        joined_video_path = self.cfg.temp_dir / "~joined_snippets.tmp.mp4"
         clips_to_close = []
         try:
             # 1. Memory-efficient concatenation using ffmpeg concat demuxer
             logger.info(f"Joining {len(clip_paths)} snippets using ffmpeg...")
-            concat_file = self.cfg.temp_dir / "concat_list.txt"
+            concat_file = self.cfg.temp_dir / "~concat_list.tmp.txt"
             with open(concat_file, "w", encoding="utf-8") as f:
                 for p in clip_paths:
                     # ffmpeg concat needs absolute paths or relative to the txt file
@@ -555,7 +555,8 @@ class Renderer:
             # -----------------------
 
             temp_audio_file = (
-                self.cfg.temp_dir / f"{self.cfg.output_path.stem}TEMP_MPY_wvf_snd.mp4"
+                self.cfg.temp_dir
+                / f"~{self.cfg.output_path.stem}TEMP_MPY_wvf_snd.tmp.mp4"
             )
             params = {
                 "fps": self.cfg.fps,
