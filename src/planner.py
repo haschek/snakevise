@@ -48,7 +48,14 @@ class MediaSource:
             self.exhausted = True
             return
 
-        self.is_image = path.suffix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]
+        self.is_image = path.suffix.lower() in [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".bmp",
+            ".gif",
+            ".webp",
+        ]
         self.beat_duration = 60.0 / bpm
         self.exhausted = False
 
