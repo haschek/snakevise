@@ -23,6 +23,7 @@ def test_valid_vfx_names_pass_validation():
         "sharpen",
         "colorboost",
         "invert",
+        "tiles",
         "all",
         "none",
     ]:

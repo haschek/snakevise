@@ -30,6 +30,7 @@ from .video import (
     tvscreen,
     zoomin,
     zoomout,
+    tiles,
 )
 
 
@@ -63,6 +64,7 @@ class EffectEngine:
         "terminal",
         "dataglitch",
         "asciiart",
+        "tiles",
     ]
 
     @staticmethod
@@ -182,6 +184,7 @@ class EffectEngine:
             "terminal": lambda c, s: terminal.apply(c, s),
             "dataglitch": lambda c, s: dataglitch.apply(c, s),
             "asciiart": lambda c, s: asciiart.apply(c, s, fade_color),
+            "tiles": lambda c, s: tiles.apply(c, s),
         }
 
         for fx in vfx:

@@ -15,7 +15,7 @@ Instead of manual boilerplate, the focus was on defining the "vibe" (rhythmic, g
 ## ✨ Features
 
 - **Rhythmic Sequencing**: Slices video and images based on BPM and beat counts.
-- **25+ Visual Effects**: Including glitch, zoom, old movie, ASCII art, dataglitch, and more.
+- **26+ Visual Effects**: Including glitch, zoom, old movie, ASCII art, dataglitch, and more.
 - **Intelligent Modes**:
   - `linear`: Sequential processing of sources.
   - `random`: Full chaotic shuffle.
@@ -240,6 +240,7 @@ python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
 | `terminal` | Green-on-black monochromatic CRT terminal look. |
 | `dataglitch` | Random block-based compression artifacts and inversions. |
 | `asciiart` | Real-time conversion of video frames to colored ASCII text. |
+| `tiles` | Divide video frame into a grid of crop-to-fit tiles with random play directions (forward/backward). |
 
 ---
 
