@@ -357,15 +357,24 @@ class Renderer:
                     base_color = random.choice(self.cfg.subtitle_colors)
                     base_scolor = random.choice(self.cfg.subtitle_stroke_colors)
 
-                    font_args = {
+                    font_args_fill = {
                         "fontsize": base_size,
                         "color": base_color,
-                        "stroke_color": base_scolor,
-                        "stroke_width": base_stroke,
                         "method": "caption",
                         "align": gravity_map.get(h_align, "Center"),
                         "size": (video.w * size_val, None),
                     }
+
+                    if base_stroke > 0:
+                        font_args_stroke = {
+                            "fontsize": base_size,
+                            "color": base_scolor,
+                            "stroke_color": base_scolor,
+                            "stroke_width": 2 * base_stroke,
+                            "method": "caption",
+                            "align": gravity_map.get(h_align, "Center"),
+                            "size": (video.w * size_val, None),
+                        }
 
                     if is_underline:
                         # MoviePy's TextClip doesn't natively support 'decorate' in all versions.
@@ -395,28 +404,53 @@ class Renderer:
                             ]
                         fonts_to_try.append(base_font)
 
-                    txt = None
+                    txt_stroke = None
+                    txt_fill = None
                     used_font = "default"
                     if fonts_to_try:
                         for font_variant in fonts_to_try:
                             try:
-                                txt = TextClip(
-                                    clean_text, font=font_variant, **font_args
+                                t_stroke = None
+                                if base_stroke > 0:
+                                    t_stroke = TextClip(
+                                        clean_text,
+                                        font=font_variant,
+                                        **font_args_stroke,
+                                    )
+                                t_fill = TextClip(
+                                    clean_text, font=font_variant, **font_args_fill
                                 )
-                                clips_to_close.append(txt)
+
+                                if t_stroke:
+                                    txt_stroke = t_stroke
+                                    clips_to_close.append(txt_stroke)
+                                txt_fill = t_fill
+                                clips_to_close.append(txt_fill)
                                 used_font = font_variant
                                 break
                             except Exception:
+                                if t_stroke:
+                                    try:
+                                        t_stroke.close()
+                                    except Exception:
+                                        pass
                                 continue
 
-                    if not txt:
+                    if not txt_fill:
                         # Final attempt: use what MoviePy considers default (no font arg)
                         try:
-                            txt = TextClip(clean_text, **font_args)
-                            clips_to_close.append(txt)
+                            if base_stroke > 0:
+                                txt_stroke = TextClip(clean_text, **font_args_stroke)
+                                clips_to_close.append(txt_stroke)
+                            txt_fill = TextClip(clean_text, **font_args_fill)
+                            clips_to_close.append(txt_fill)
                             used_font = "system-default"
                         except Exception:
-                            # Let it raise an error if even this fails
+                            if txt_stroke:
+                                try:
+                                    txt_stroke.close()
+                                except Exception:
+                                    pass
                             raise RuntimeError(
                                 "Could not create TextClip with any font variant."
                             )
@@ -428,30 +462,40 @@ class Renderer:
                     if h_align == "left":
                         pos_x = int(video.w * 0.05)
                     elif h_align == "right":
-                        pos_x = video.w - txt.w - int(video.w * 0.05)
+                        pos_x = video.w - txt_fill.w - int(video.w * 0.05)
                     else:
                         pos_x = "center"
 
                     if v_align == "top":
                         pos_y = int(video.h * 0.05)
                     elif v_align == "bottom":
-                        pos_y = video.h - txt.h - int(video.h * 0.05)
+                        pos_y = video.h - txt_fill.h - int(video.h * 0.05)
                     else:
                         pos_y = "center"
 
-                    txt_final = (
-                        txt.set_start(start)
+                    pos_tuple = (pos_x, pos_y)
+
+                    if txt_stroke:
+                        txt_stroke_final = (
+                            txt_stroke.set_start(start)
+                            .set_duration(duration)
+                            .set_position(pos_tuple)
+                        )
+                        clips_to_close.append(txt_stroke_final)
+                        subtitle_clips.append(txt_stroke_final)
+
+                    txt_fill_final = (
+                        txt_fill.set_start(start)
                         .set_duration(duration)
-                        .set_position((pos_x, pos_y))
+                        .set_position(pos_tuple)
                     )
-                    clips_to_close.append(txt_final)
+                    clips_to_close.append(txt_fill_final)
+                    subtitle_clips.append(txt_fill_final)
 
                     logger.info(
                         f'Subtitle Cue: "{clean_text[:30]}..." | Style: {"/".join(filter(None, [is_bold and "Bold", is_italic and "Italic", is_underline and "Underline"])) or "Normal"} | '
                         f"Font: {used_font} | Size: {base_size} | Stroke: {base_stroke} | Color: {base_color} | SColor: {base_scolor} | Align: {h_align} | Line: {v_align} | Pos: {pos_x},{pos_y}"
                     )
-
-                    subtitle_clips.append(txt_final)
                 except Exception as cue_err:
                     logger.warning(f"Skipping subtitle cue at {start_str}: {cue_err}")
                     continue
