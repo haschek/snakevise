@@ -64,3 +64,36 @@ def test_expand_dynamic_vars_full(mock_renderable, mock_fonts):
         assert isinstance(s, float)
     for w in expanded["subtitle_strokewidths"]:
         assert isinstance(w, float)
+
+
+def test_resolve_stfx_params():
+    args = MagicMock()
+    args.preset = None
+    args.loadproject = None
+    args.bpm = 120
+    args.snippetbeats = "4..8"
+    args.modus = "linear"
+    args.vfx = []
+    args.input = []
+    args.res = ((1920, 1080), 24)
+    args.codec = "libx264"
+    args.optimize = False
+    args.audio = None
+    args.subtitles = "subs.vtt"
+    args.duration = None
+    args.length = None
+    args.crop = []
+    args.fadecolor = None
+    args.stfx = ["fadein:50:1..3", "slidein:100:5"]
+    args.stfx_chance = 50.0
+    args.stfx_intensity = "2..4"
+    args.stfx_maximum = 2
+    args.stfx_order = "random"
+
+    conf = ConfigResolver.resolve(args)
+
+    assert conf["stfx"] == ["fadein:50:1..3", "slidein:100:5"]
+    assert conf["stfx_chance"] == 50.0
+    assert conf["stfx_intensity"] == "2..4"
+    assert conf["stfx_maximum"] == 2
+    assert conf["stfx_order"] == "random"

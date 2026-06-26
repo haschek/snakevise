@@ -118,6 +118,36 @@ def main() -> None:
         action="append",
         help="Stroke color(s) for subtitles. Can be multiple, comma-separated, or RANDOM:n.",
     )
+    g_time.add_argument(
+        "--stfx",
+        action="append",
+        help="Add a subtitle visual effect. Format: NAME:CHANCE:STRENGTH (e.g., fadein:50:1..3). Available: fadein, fadeout, slidein, slideout",
+    )
+    g_time.add_argument(
+        "--stfx-chance",
+        dest="stfx_chance",
+        type=float,
+        help="Global probability (0-100) for all subtitle effects.",
+    )
+    g_time.add_argument(
+        "--stfx-intensity",
+        dest="stfx_intensity",
+        type=str,
+        help="Global subtitle effect strength/intensity (e.g. 1..3).",
+    )
+    g_time.add_argument(
+        "--stfx-maximum",
+        dest="stfx_maximum",
+        type=int,
+        help="Maximum number of subtitle effects to apply per cue.",
+    )
+    g_time.add_argument(
+        "--stfx-order",
+        dest="stfx_order",
+        type=str,
+        choices=["linear", "random"],
+        help="Execution order for subtitle effects.",
+    )
     g_time.add_argument("--duration", type=float, help="Target duration in seconds")
     g_time.add_argument("--length", type=float, help="Target duration in Beats")
 
@@ -256,6 +286,14 @@ def main() -> None:
     # Expand dynamic variables (RANDOM:...) into concrete lists
     active_conf = ConfigResolver.expand_dynamic_vars(active_conf)
 
+    # Parse Subtitle VFX
+
+    global_stfx_range = parse_range_string(active_conf["stfx_intensity"])
+    stfx_configs = [
+        parse_effect_string(fx_str, active_conf["stfx_chance"], global_stfx_range)
+        for fx_str in active_conf["stfx"]
+    ] or []
+
     # Prep Render Config
     w, h = map(int, active_conf["resolution"].lower().split("x"))
     global_beat_dur = 60.0 / active_conf["bpm"]
@@ -294,6 +332,11 @@ def main() -> None:
         subtitle_strokewidths=active_conf["subtitle_strokewidths"],
         subtitle_colors=active_conf["subtitle_colors"],
         subtitle_stroke_colors=active_conf["subtitle_stroke_colors"],
+        subtitle_vfx=stfx_configs,
+        subtitle_vfx_chance=float(active_conf["stfx_chance"]),
+        subtitle_vfx_intensity=active_conf["stfx_intensity"],
+        subtitle_vfx_maximum=active_conf["stfx_maximum"],
+        subtitle_vfx_order=active_conf["stfx_order"],
         target_duration=None,
         fade_in=parse_duration_string(active_conf["fadein"], global_beat_dur),
         fade_out=parse_duration_string(active_conf["fadeout"], global_beat_dur),

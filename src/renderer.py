@@ -237,8 +237,8 @@ class Renderer:
         if not self.cfg.subtitles_path or not self.cfg.subtitles_path.exists():
             return video
 
-        # --- Font Validation ---
         from .utils import check_font_renderable, get_compatible_fonts
+        from .effects.subtitles import fadein, fadeout, slidein, slideout
 
         requested_fonts = self.cfg.subtitle_fonts
         if not requested_fonts:
@@ -455,46 +455,171 @@ class Renderer:
                                 "Could not create TextClip with any font variant."
                             )
 
-                    # 5. Position Calculation with 5% margins
-                    pos_x = "center"
-                    pos_y = "center"
+                    # 5. Parse VFX / Animations
+                    cue_vfx = []
 
+                    # Check for inline WebVTT vfx overrides
+                    fadein_match = re.search(
+                        r"vfx:fadein:([\d.]+)", settings_str.lower()
+                    )
+                    if fadein_match:
+                        cue_vfx.append(
+                            {"name": "fadein", "strength": float(fadein_match.group(1))}
+                        )
+
+                    fadeout_match = re.search(
+                        r"vfx:fadeout:([\d.]+)", settings_str.lower()
+                    )
+                    if fadeout_match:
+                        cue_vfx.append(
+                            {
+                                "name": "fadeout",
+                                "strength": float(fadeout_match.group(1)),
+                            }
+                        )
+
+                    slidein_match = re.search(
+                        r"vfx:slidein:([a-zA-Z]+)(?::([\d.]+))?", settings_str.lower()
+                    )
+                    if slidein_match:
+                        direction = slidein_match.group(1)
+                        dur = (
+                            float(slidein_match.group(2))
+                            if slidein_match.group(2)
+                            else 0.2
+                        )
+                        cue_vfx.append(
+                            {
+                                "name": "slidein",
+                                "strength": 0.0,
+                                "_direct": (direction, dur),
+                            }
+                        )
+
+                    slideout_match = re.search(
+                        r"vfx:slideout:([a-zA-Z]+)(?::([\d.]+))?", settings_str.lower()
+                    )
+                    if slideout_match:
+                        direction = slideout_match.group(1)
+                        dur = (
+                            float(slideout_match.group(2))
+                            if slideout_match.group(2)
+                            else 0.2
+                        )
+                        cue_vfx.append(
+                            {
+                                "name": "slideout",
+                                "strength": 0.0,
+                                "_direct": (direction, dur),
+                            }
+                        )
+
+                    # Select global probabilistic subtitle effects for this cue
+                    global_cue_vfx = EffectEngine.select_effects(
+                        configs=self.cfg.subtitle_vfx,
+                        max_limit=self.cfg.subtitle_vfx_maximum,
+                        order=self.cfg.subtitle_vfx_order,
+                    )
+
+                    # WebVTT direct cue effects override global effects of the same name
+                    final_cue_vfx = list(cue_vfx)
+                    cue_vfx_names = {fx["name"] for fx in cue_vfx}
+                    for fx in global_cue_vfx:
+                        if fx["name"] not in cue_vfx_names:
+                            final_cue_vfx.append(fx)
+
+                    # Calculate target absolute numeric coordinates (relative to txt_fill dimensions)
                     if h_align == "left":
-                        pos_x = int(video.w * 0.05)
+                        target_x = int(video.w * 0.05)
                     elif h_align == "right":
-                        pos_x = video.w - txt_fill.w - int(video.w * 0.05)
+                        target_x = video.w - txt_fill.w - int(video.w * 0.05)
                     else:
-                        pos_x = "center"
+                        target_x = int((video.w - txt_fill.w) / 2)
 
                     if v_align == "top":
-                        pos_y = int(video.h * 0.05)
+                        target_y = int(video.h * 0.05)
                     elif v_align == "bottom":
-                        pos_y = video.h - txt_fill.h - int(video.h * 0.05)
+                        target_y = video.h - txt_fill.h - int(video.h * 0.05)
                     else:
-                        pos_y = "center"
+                        target_y = int((video.h - txt_fill.h) / 2)
 
-                    pos_tuple = (pos_x, pos_y)
-
+                    # Initial timing/positioning of clips
                     if txt_stroke:
-                        txt_stroke_final = (
-                            txt_stroke.set_start(start)
-                            .set_duration(duration)
-                            .set_position(pos_tuple)
+                        txt_stroke_final = txt_stroke.set_start(start).set_duration(
+                            duration
                         )
-                        clips_to_close.append(txt_stroke_final)
-                        subtitle_clips.append(txt_stroke_final)
+                    else:
+                        txt_stroke_final = None
 
                     txt_fill_final = (
                         txt_fill.set_start(start)
                         .set_duration(duration)
-                        .set_position(pos_tuple)
+                        .set_position((target_x, target_y))
                     )
+
+                    # Apply visual effects sequentially via plugins
+                    for fx in final_cue_vfx:
+                        name = fx["name"]
+                        strength_val = (
+                            fx["_direct"] if "_direct" in fx else fx["strength"]
+                        )
+
+                        if name == "slidein":
+                            txt_fill_final, txt_stroke_final = slidein.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "slideout":
+                            txt_fill_final, txt_stroke_final = slideout.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "fadein":
+                            txt_fill_final, txt_stroke_final = fadein.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "fadeout":
+                            txt_fill_final, txt_stroke_final = fadeout.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+
+                    # Append to final lists
+                    if txt_stroke_final:
+                        clips_to_close.append(txt_stroke_final)
+                        subtitle_clips.append(txt_stroke_final)
+
                     clips_to_close.append(txt_fill_final)
                     subtitle_clips.append(txt_fill_final)
 
                     logger.info(
                         f'Subtitle Cue: "{clean_text[:30]}..." | Style: {"/".join(filter(None, [is_bold and "Bold", is_italic and "Italic", is_underline and "Underline"])) or "Normal"} | '
-                        f"Font: {used_font} | Size: {base_size} | Stroke: {base_stroke} | Color: {base_color} | SColor: {base_scolor} | Align: {h_align} | Line: {v_align} | Pos: {pos_x},{pos_y}"
+                        f"Font: {used_font} | Size: {base_size} | Stroke: {base_stroke} | Color: {base_color} | SColor: {base_scolor} | Align: {h_align} | Line: {v_align} | Pos: {target_x},{target_y} | VFX: {[fx['name'] for fx in final_cue_vfx]}"
                     )
                 except Exception as cue_err:
                     logger.warning(f"Skipping subtitle cue at {start_str}: {cue_err}")

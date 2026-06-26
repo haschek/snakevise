@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -43,6 +43,11 @@ class RenderConfig:
     fade_color: str
     dry_run: bool
     bpm: float
+    subtitle_vfx: List[Dict[str, Any]] = field(default_factory=list)
+    subtitle_vfx_chance: float = 20.0
+    subtitle_vfx_intensity: str = "1..3"
+    subtitle_vfx_maximum: Optional[int] = None
+    subtitle_vfx_order: str = "linear"
 
 
 @dataclass

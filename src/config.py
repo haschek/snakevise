@@ -135,6 +135,10 @@ class ConfigResolver:
             "vfx_intensity",
             "vfx_maximum",
             "vfx_order",
+            "stfx_chance",
+            "stfx_intensity",
+            "stfx_maximum",
+            "stfx_order",
             "fadein",
             "fadeout",
         ]
@@ -209,6 +213,9 @@ class ConfigResolver:
             for ssc in args.stscolor:
                 sscolors.extend([s.strip() for s in ssc.split(",") if s.strip()])
             active_conf["subtitle_stroke_colors"] = sscolors
+
+        if getattr(args, "stfx", None) is not None:
+            active_conf["stfx"] = args.stfx
 
         if args.duration:
             active_conf["duration"] = args.duration

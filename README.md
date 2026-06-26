@@ -164,6 +164,11 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
   - Supports random selection: `--stcolor RANDOM:5` picks 5 random colors.
 - `--stscolor`: Stroke color(s) for subtitles (default: `black`).
   - Same format as `--stcolor`.
+- `--stfx`: Add a subtitle visual effect. Format: `EFFECT:CHANCE:STRENGTH` (e.g. `fadein:50:1..10`). Available effects: `fadein`, `fadeout`, `slidein`, `slideout`.
+- `--stfx-chance`: Global probability (0-100) for all subtitle effects (default: `20`).
+- `--stfx-intensity`: Global subtitle effect strength/intensity (default: `1..3`).
+- `--stfx-maximum`: Maximum number of subtitle effects to apply per cue (default: `None`).
+- `--stfx-order`: Execution order for subtitle effects (`linear` or `random`).
 
 ### Supported Features
 
@@ -175,6 +180,31 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
 - **Formatting**: Supports standard HTML-like tags (case-insensitive):
   - `<b>...</b>` or `<strong>...</strong>` for **Bold** text.
   - `<i>...</i>` or `<em>...</em>` for *Italic* text.
+- **Visual Effects & Animations**: Subtitles can fade in/out or slide in/out smoothly from off-screen using ease-out/ease-in motion.
+  - **Inline Configuration (WebVTT settings block)**: Add tags like
+    `vfx:fadein:strength`, `vfx:fadeout:strength`, `vfx:slidein:direction:ratio`,
+    and `vfx:slideout:direction:ratio` directly to the cue header.
+    - Example: `vfx:fadein:8` (strength 8, i.e., 32% of cue duration)
+    - Example: `vfx:slidein:left:0.2` (slide-in from left taking 20% of cue duration)
+    - Example: `vfx:slideout:right:0.15` (slide-out to right taking 15% of cue duration)
+  - **Global Configuration (CLI & Presets)**: Use the structured subtitle visual effects engine (analogous to video effects).
+    - Example: `python snakevise.py --subtitles lyrics.vtt --stfx fadein:50:1..10 --stfx slidein:100:5`
+    - **Fading Strength**: Relative to the cue's active display time: `1 = 4%` to
+      `10 = 40%` of the subtitle cue's duration (e.g., strength `8` on a `2.0s`
+      cue results in a `0.64s` fade duration).
+    - **Slidein / Slideout Strength**: Relative to the cue's active display time
+      (slow = `25%` of cue duration, fast = `12%` of cue duration). Decoded into
+      direction and speed combinations:
+      - `1`: bottom, slow (25% of cue duration)
+      - `2`: bottom, fast (12% of cue duration)
+      - `3`: top, slow (25% of cue duration)
+      - `4`: top, fast (12% of cue duration)
+      - `5`: left, slow (25% of cue duration)
+      - `6`: left, fast (12% of cue duration)
+      - `7`: right, slow (25% of cue duration)
+      - `8`: right, fast (12% of cue duration)
+      - `9`: random direction, slow (25% of cue duration)
+      - `10` or higher: random direction, fast (12% of cue duration)
 - **Dry Run Support**: Use `--dry-run` to see the calculated subtitle plan and positions in the log without rendering the video.
 - **Dynamic Sizing**: Subtitles are automatically wrapped and sized to fit within 90% of the video width.
 - **Advanced Font Support**:
@@ -192,20 +222,20 @@ Save this as `lyrics.vtt`:
 ```vtt
 WEBVTT
 
-00:00.500 --> 00:02.000 align:left line:top
+00:00.500 --> 00:02.000 align:left line:top vfx:fadein:8 vfx:fadeout:6
 <b>SNAKEVISE</b> - THE VIBE
 
-00:02.500 --> 00:05.000 align:center line:middle
+00:02.500 --> 00:05.000 align:center line:middle vfx:slidein:left:0.2 vfx:fadeout:5
 <i>Procedural Video Generator</i>
 
-00:06.000 --> 00:08.000 align:right line:bottom
+00:06.000 --> 00:08.000 align:right line:bottom vfx:slidein:top:0.15 vfx:slideout:right:0.2
 Created with <u>Gemini CLI</u>
 ```
 
-To render with these subtitles:
+To render with these subtitles and custom global defaults:
 
 ```bash
-python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt
+python snakevise.py --input my_video.mp4 --subtitles lyrics.vtt --stfx fadein:100:8 --stfx slideout:50:8
 ```
 
 ---
