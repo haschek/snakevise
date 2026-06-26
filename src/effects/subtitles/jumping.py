@@ -38,9 +38,10 @@ def apply(
     if num_jumps == 0:
         return text_clip, stroke_clip
 
-    # Jump distance (displacement range) scales linearly with strength
-    min_disp = strength_clamped * 2.0
-    max_disp = strength_clamped * 5.0
+    # Calculate maximum displacement per axis: strength 1 -> 15px, strength 10 -> 60px
+    max_disp = 10.0 + strength_clamped * 5.0
+    # Minimum offset is 1/3 of the maximum possible displacement
+    min_disp = max_disp / 3.0
 
     # Pre-generate jump offsets for all intervals.
     # Total intervals = num_jumps + 1.
