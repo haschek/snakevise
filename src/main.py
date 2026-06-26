@@ -121,7 +121,7 @@ def main() -> None:
     g_time.add_argument(
         "--stfx",
         action="append",
-        help="Add a subtitle visual effect. Format: NAME:CHANCE:STRENGTH (e.g., fadein:50:1..3). Available: fadein, fadeout, slidein, slideout, blur, flickering",
+        help="Add a subtitle visual effect. Format: NAME:CHANCE:STRENGTH (e.g., fadein:50:1..3). Available: fadein, fadeout, slidein, slideout, blur, flickering, jumping",
     )
     g_time.add_argument(
         "--stfx-chance",

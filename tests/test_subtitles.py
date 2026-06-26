@@ -772,3 +772,114 @@ def test_flicker_count_calculation():
             )
     finally:
         random.setstate(state)
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_jumping_effect(mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "jumping", "chance": 100.0, "strength_range": (3.0, 3.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    vtt_content = (
+        "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center\nHello World\n\n"
+    )
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify that the position was set
+    assert mock_clip.set_position.called
+
+
+def test_jumping_count_and_intervals():
+    import numpy as np
+    from src.effects.subtitles import jumping
+
+    class FakeClip:
+        def __init__(self, duration):
+            self.duration = duration
+            self.pos = (100, 200)
+
+        def set_position(self, pos_fn):
+            self.pos = pos_fn
+            return self
+
+    # Test cases for number of jumps capping: (strength, duration, expected_jumps)
+    # min_hold_duration = 0.15
+    # For S=10.0, dur=0.5: expected = 5 jumps, max_intervals = max(1, 0.5/0.15) = 3 -> max_jumps = 2.
+    # So capped num_jumps = 2.
+    clip = FakeClip(0.5)
+    res_clip, _ = jumping.apply(clip, None, 10.0, 0.5, 1920, 1080, 100, 200)
+
+    # We sampled positions at intervals. Since we have 2 jumps, we have 3 intervals (index 0, 1, 2)
+    # interval_len = 0.5 / 3 = 0.1667s.
+    pos_0 = res_clip.pos(0.0)
+    pos_1 = res_clip.pos(0.2)
+    pos_2 = res_clip.pos(0.4)
+
+    # Calculate displacement relative to (100, 200)
+    dx_0, dy_0 = pos_0[0] - 100, pos_0[1] - 200
+    dx_1, dy_1 = pos_1[0] - 100, pos_1[1] - 200
+    dx_2, dy_2 = pos_2[0] - 100, pos_2[1] - 200
+
+    # Interval 0 must be the original position (0, 0)
+    assert dx_0 == 0 and dy_0 == 0
+
+    # Jump 1 (dx_1, dy_1) and Jump 2 (dx_2, dy_2) should have opposite signs
+    # so they cross/overstep the origin!
+    assert np.sign(dx_1) == -np.sign(dx_2)
+    assert np.sign(dy_1) == -np.sign(dy_2)
+
+    # Displacement bounds: min_disp = 10 * 2 = 20.0, max_disp = 10 * 5 = 50.0
+    assert 20.0 <= abs(dx_1) <= 50.0
+    assert 20.0 <= abs(dy_1) <= 50.0
+    assert 20.0 <= abs(dx_2) <= 50.0
+    assert 20.0 <= abs(dy_2) <= 50.0

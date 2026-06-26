@@ -164,7 +164,7 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
   - Supports random selection: `--stcolor RANDOM:5` picks 5 random colors.
 - `--stscolor`: Stroke color(s) for subtitles (default: `black`).
   - Same format as `--stcolor`.
-- --stfx: Add a subtitle visual effect. Format: `EFFECT:CHANCE:STRENGTH` (e.g. `fadein:50:1..10`). Available effects: `fadein`, `fadeout`, `slidein`, `slideout`, `blur`, `flickering`.
+- --stfx: Subtitle visual effect. Format: `EFFECT:CHANCE:STRENGTH` (e.g. `fadein:50:1..10`). Effects: `fadein`, `fadeout`, `slidein`, `slideout`, `blur`, `flickering`, `jumping`.
 - `--stfx-chance`: Global probability (0-100) for all subtitle effects (default: `20`).
 - `--stfx-intensity`: Global subtitle effect strength/intensity (default: `1..3`).
 - `--stfx-maximum`: Maximum number of subtitle effects to apply per cue (default: `None`).
@@ -180,15 +180,17 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
 - **Formatting**: Supports standard HTML-like tags (case-insensitive):
   - `<b>...</b>` or `<strong>...</strong>` for **Bold** text.
   - `<i>...</i>` or `<em>...</em>` for *Italic* text.
-- **Visual Effects & Animations**: Subtitles can fade in/out, slide in/out smoothly from off-screen using ease-out/ease-in motion, blur constantly, or flicker.
+- **Visual Effects & Animations**: Subtitles can fade in/out, slide in/out smoothly from off-screen using ease-out/ease-in motion, blur constantly, flicker, or jump around.
   - **Inline Configuration (WebVTT settings block)**: Add tags like
     `vfx:fadein:strength`, `vfx:fadeout:strength`, `vfx:slidein:direction:ratio`,
-    `vfx:slideout:direction:ratio`, `vfx:blur:strength`, and `vfx:flickering:strength` directly to the cue header.
+    `vfx:slideout:direction:ratio`, `vfx:blur:strength`, `vfx:flickering:strength`,
+    and `vfx:jumping:strength` directly to the cue header.
     - Example: `vfx:fadein:8` (strength 8, i.e., 32% of cue duration)
     - Example: `vfx:slidein:left:0.2` (slide-in from left taking 20% of cue duration)
     - Example: `vfx:slideout:right:0.15` (slide-out to right taking 15% of cue duration)
     - Example: `vfx:blur:5` (strength 5 constant blur)
     - Example: `vfx:flickering:4` (flickers 4 times at random moments)
+    - Example: `vfx:jumping:6` (jumps 6 times/sec, displacement based on strength 6)
   - **Global Configuration (CLI & Presets)**: Use the structured subtitle visual effects engine (analogous to video effects).
     - Example: `python snakevise.py --subtitles lyrics.vtt --stfx fadein:50:1..10 --stfx slidein:100:5`
     - **Fading Strength**: Relative to the cue's active display time: `1 = 4%` to
@@ -212,6 +214,9 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
       `10` corresponds to `5px`, scaled linearly (`sigma = strength * 0.5`).
     - **Flickering Strength**: Determines the frequency and minimum number of times the text and outline disappear. Strength `1` corresponds to 1 flicker per second
       (minimum 1 flicker per cue), and strength `10` corresponds to 10 flickers per second (minimum 10 flickers per cue). The duration of each flicker is 15ms to 45ms.
+    - **Jumping Strength**: Dictates displacement distance and jump frequency. Strength `1` corresponds to 1 jump per second (min 1 per cue), and strength `10`
+      corresponds to 10 jumps per second (min 10 per cue). The position jumps randomly in all directions, alternating signs to cross the original position on every jump.
+      Displacement ranges from `strength * 2px` to `strength * 5px` (e.g. 20-50px at strength 10). To ensure readability, each position is held for a minimum of 150ms.
 - **Dry Run Support**: Use `--dry-run` to see the calculated subtitle plan and positions in the log without rendering the video.
 - **Dynamic Sizing**: Subtitles are automatically wrapped and sized to fit within 90% of the video width.
 - **Advanced Font Support**:
