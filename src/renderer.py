@@ -246,6 +246,7 @@ class Renderer:
             blur,
             flickering,
             jumping,
+            moving,
         )
 
         requested_fonts = self.cfg.subtitle_fonts
@@ -503,6 +504,17 @@ class Renderer:
                             }
                         )
 
+                    moving_match = re.search(
+                        r"vfx:moving:([\d.]+)", settings_str.lower()
+                    )
+                    if moving_match:
+                        cue_vfx.append(
+                            {
+                                "name": "moving",
+                                "strength": float(moving_match.group(1)),
+                            }
+                        )
+
                     fadeout_match = re.search(
                         r"vfx:fadeout:([\d.]+)", settings_str.lower()
                     )
@@ -677,6 +689,17 @@ class Renderer:
                             )
                         elif name == "jumping":
                             txt_fill_final, txt_stroke_final = jumping.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "moving":
+                            txt_fill_final, txt_stroke_final = moving.apply(
                                 txt_fill_final,
                                 txt_stroke_final,
                                 strength_val,

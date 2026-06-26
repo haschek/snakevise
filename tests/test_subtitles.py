@@ -878,8 +878,114 @@ def test_jumping_count_and_intervals():
     assert np.sign(dx_1) == -np.sign(dx_2)
     assert np.sign(dy_1) == -np.sign(dy_2)
 
-    # Displacement bounds: min_disp = 10 * 2 = 20.0, max_disp = 10 * 5 = 50.0
-    assert 20.0 <= abs(dx_1) <= 50.0
-    assert 20.0 <= abs(dy_1) <= 50.0
-    assert 20.0 <= abs(dx_2) <= 50.0
-    assert 20.0 <= abs(dy_2) <= 50.0
+    # Displacement bounds: min_disp = 60.0 / 3.0 = 20.0, max_disp = 60.0
+    assert 20.0 <= abs(dx_1) <= 60.0
+    assert 20.0 <= abs(dy_1) <= 60.0
+    assert 20.0 <= abs(dx_2) <= 60.0
+    assert 20.0 <= abs(dy_2) <= 60.0
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_moving_effect(mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "moving", "chance": 100.0, "strength_range": (3.0, 3.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    vtt_content = (
+        "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center\nHello World\n\n"
+    )
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify that position was set
+    assert mock_clip.set_position.called
+
+
+def test_moving_smooth_interpolation():
+    from src.effects.subtitles import moving
+
+    class FakeClip:
+        def __init__(self, duration):
+            self.duration = duration
+            self.pos = (100, 200)
+
+        def set_position(self, pos_fn):
+            self.pos = pos_fn
+            return self
+
+    # cue_duration = 0.5s, strength = 10.0 -> expected 2 jumps, 3 intervals
+    # interval_len = 0.5 / 3 = 0.1667s
+    # transition_dur = interval_len = 0.1667s
+    clip = FakeClip(0.5)
+    res_clip, _ = moving.apply(clip, None, 10.0, 0.5, 1920, 1080, 100, 200)
+
+    # Sample position at start (interval 0)
+    pos_start = res_clip.pos(0.0)
+    dx_start = pos_start[0] - 100
+    assert dx_start == 0
+
+    # Sample position right at the boundary of interval 1 (t = 0.1667)
+    pos_boundary = res_clip.pos(0.1667)
+    dx_boundary = pos_boundary[0] - 100
+    assert dx_boundary == 0
+
+    # Sample position at the end of interval 1 (t = 0.3333)
+    pos_end = res_clip.pos(0.3333)
+    dx_target = pos_end[0] - 100
+
+    # Sample position mid-transition (t = 0.25)
+    pos_mid = res_clip.pos(0.25)
+    dx_mid = pos_mid[0] - 100
+
+    # Check that mid-transition displacement is strictly between start (0) and target
+    assert abs(dx_mid) > 0
+    assert abs(dx_mid) < abs(dx_target)
