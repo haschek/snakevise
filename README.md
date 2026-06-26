@@ -164,7 +164,7 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
   - Supports random selection: `--stcolor RANDOM:5` picks 5 random colors.
 - `--stscolor`: Stroke color(s) for subtitles (default: `black`).
   - Same format as `--stcolor`.
-- --stfx: Subtitle effect. Format: `EFFECT:CHANCE:STRENGTH` (e.g. `fadein:50:1..10`). Effects: `fadein`, `fadeout`, `slidein`, `slideout`, `blur`, `flickering`, `jumping`, `moving`.
+- --stfx: Subtitle effect. Format: `EFFECT:CHANCE:STRENGTH` (e.g. `fadein:50:1..10`). Effects: `fadein`/`fadeout`, `slidein`/`slideout`, `blur`, `flickering`, `jumping`, `moving`, `tilt`.
 - `--stfx-chance`: Global probability (0-100) for all subtitle effects (default: `20`).
 - `--stfx-intensity`: Global subtitle effect strength/intensity (default: `1..3`).
 - `--stfx-maximum`: Maximum number of subtitle effects to apply per cue (default: `None`).
@@ -180,11 +180,11 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
 - **Formatting**: Supports standard HTML-like tags (case-insensitive):
   - `<b>...</b>` or `<strong>...</strong>` for **Bold** text.
   - `<i>...</i>` or `<em>...</em>` for *Italic* text.
-- **Visual Effects & Animations**: Subtitles can fade in/out, slide in/out from off-screen, blur, flicker, jump, or move smoothly.
+- **Visual Effects & Animations**: Subtitles can fade in/out, slide in/out from off-screen, blur, flicker, jump, move, or tilt smoothly.
   - **Inline Configuration (WebVTT settings block)**: Add tags like
     `vfx:fadein:strength`, `vfx:fadeout:strength`, `vfx:slidein:direction:ratio`,
     `vfx:slideout:direction:ratio`, `vfx:blur:strength`, `vfx:flickering:strength`,
-    `vfx:jumping:strength`, and `vfx:moving:strength` directly to the cue header.
+    `vfx:jumping:strength`, `vfx:moving:strength`, and `vfx:tilt:strength` directly to the cue header.
     - Example: `vfx:fadein:8` (strength 8, i.e., 32% of cue duration)
     - Example: `vfx:slidein:left:0.2` (slide-in from left taking 20% of cue duration)
     - Example: `vfx:slideout:right:0.15` (slide-out to right taking 15% of cue duration)
@@ -192,6 +192,7 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
     - Example: `vfx:flickering:4` (flickers 4 times at random moments)
     - Example: `vfx:jumping:6` (jumps 6 times/sec, displacement based on strength 6)
     - Example: `vfx:moving:5` (moves smoothly 5 times/sec, displacement based on strength 5)
+    - Example: `vfx:tilt:5` (tilts smoothly 5 times/sec, inclination based on strength 5)
   - **Global Configuration (CLI & Presets)**: Use the structured subtitle visual effects engine (analogous to video effects).
     - Example: `python snakevise.py --subtitles lyrics.vtt --stfx fadein:50:1..10 --stfx slidein:100:5`
     - **Fading Strength**: Relative to the cue's active display time: `1 = 4%` to
@@ -221,6 +222,9 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
       To ensure readability, each position is held for a minimum of 150ms.
     - **Moving Strength**: Similar to jumping, but moves the subtitle continuously between positions without stationary pauses, using smooth cubic ease-in-out transitions. Strength
       `1` corresponds to 1 move per second (min 1 per cue) and `10` corresponds to 10 moves per second (min 10 per cue). Alternates signs to cross the origin.
+    - **Tilt Strength**: Smoothly rotates/inclines the subtitle back and forth continuously without stationary pauses using cubic ease-in-out transitions. Strength `1`
+      corresponds to 1 tilt per second (min 1 per cue) and `10` corresponds to 10 tilts per second (min 10 per cue). The rotation alternates signs to cross the original
+      upright position (0 deg). Maximum tilt angle ranges from 4.2 degrees (at strength 1) to 15.0 degrees (at strength 10), with a minimum offset of 1/3 of the max angle.
 - **Dry Run Support**: Use `--dry-run` to see the calculated subtitle plan and positions in the log without rendering the video.
 - **Dynamic Sizing**: Subtitles are automatically wrapped and sized to fit within 90% of the video width.
 - **Advanced Font Support**:

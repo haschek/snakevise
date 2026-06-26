@@ -247,6 +247,7 @@ class Renderer:
             flickering,
             jumping,
             moving,
+            tilt,
         )
 
         requested_fonts = self.cfg.subtitle_fonts
@@ -515,6 +516,15 @@ class Renderer:
                             }
                         )
 
+                    tilt_match = re.search(r"vfx:tilt:([\d.]+)", settings_str.lower())
+                    if tilt_match:
+                        cue_vfx.append(
+                            {
+                                "name": "tilt",
+                                "strength": float(tilt_match.group(1)),
+                            }
+                        )
+
                     fadeout_match = re.search(
                         r"vfx:fadeout:([\d.]+)", settings_str.lower()
                     )
@@ -700,6 +710,17 @@ class Renderer:
                             )
                         elif name == "moving":
                             txt_fill_final, txt_stroke_final = moving.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "tilt":
+                            txt_fill_final, txt_stroke_final = tilt.apply(
                                 txt_fill_final,
                                 txt_stroke_final,
                                 strength_val,

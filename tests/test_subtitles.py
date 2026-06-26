@@ -989,3 +989,150 @@ def test_moving_smooth_interpolation():
     # Check that mid-transition displacement is strictly between start (0) and target
     assert abs(dx_mid) > 0
     assert abs(dx_mid) < abs(dx_target)
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_tilt_effect(mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "tilt", "chance": 100.0, "strength_range": (3.0, 3.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    vtt_content = (
+        "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center\nHello World\n\n"
+    )
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify that the TextClip was created (which triggers the tilt plugin)
+    assert mock_text_clip.called
+
+
+def test_tilt_logic_and_transitions():
+    from src.effects.subtitles import tilt
+
+    class FakeClip:
+        def __init__(self, duration):
+            self.duration = duration
+            self.mask = None
+            self.fl_fn = None
+            self.w = 100
+            self.h = 20
+            self.size = (100, 20)
+
+        def fl(self, filter_fn):
+            self.fl_fn = filter_fn
+            return self
+
+        def set_mask(self, mask):
+            self.mask = mask
+            return self
+
+    # cue_duration = 0.5s, strength = 10.0 -> expected 2 tilts, 3 intervals
+    # interval_len = 0.5 / 3 = 0.1667s
+    clip = FakeClip(0.5)
+
+    # We patch random.uniform and random.choice inside tilt to make it deterministic
+    # strength 10 -> max_angle = 3 + 10 * 1.2 = 15.0 deg. min_angle = 5.0 deg.
+    with patch("random.choice", return_value=1):
+        with patch("random.uniform", return_value=12.0):
+            res_clip, _ = tilt.apply(clip, None, 10.0, 0.5, 1920, 1080, 100, 200)
+
+    # Verify that the clip properties are padded to D = 102
+    assert res_clip.w == 102
+    assert res_clip.h == 102
+    assert res_clip.size == (102, 102)
+
+    # Verify that the position calculation is correctly shifted:
+    # x - (D - orig_w)/2 = 100 - (102 - 100)/2 = 99
+    # y - (D - orig_h)/2 = 200 - (102 - 20)/2 = 159
+    assert res_clip.pos(0.0) == (99, 159)
+
+    # We patch PIL Image.rotate to capture the angle passed to it
+    from PIL import Image
+
+    captured_angles = []
+    original_rotate = Image.Image.rotate
+
+    def mock_rotate(self, angle, *args, **kwargs):
+        captured_angles.append(angle)
+        return original_rotate(self, angle, *args, **kwargs)
+
+    with patch("PIL.Image.Image.rotate", mock_rotate):
+        import numpy as np
+
+        # Create dummy frame matching original 100x20 size
+        dummy_frame = np.zeros((20, 100, 4), dtype=np.uint8)
+
+        def get_frame_fn(time):
+            return dummy_frame
+
+        # Sample at start (t=0.0): angle is 0.0, so rotate is not called
+        frame_start = res_clip.fl_fn(get_frame_fn, 0.0)
+        assert len(captured_angles) == 0
+        assert frame_start.shape == (102, 102, 4)
+
+        # Sample at midpoint (t=0.25): mid transition
+        frame_mid = res_clip.fl_fn(get_frame_fn, 0.25)
+        assert frame_mid.shape == (102, 102, 4)
+
+        # Sample at end of interval 1 (t=0.3333): reaches target angle
+        frame_end = res_clip.fl_fn(get_frame_fn, 0.3333)
+        assert frame_end.shape == (102, 102, 4)
+
+    assert len(captured_angles) == 2
+    angle_mid = captured_angles[0]
+    angle_end = captured_angles[1]
+
+    # Target angle should be exactly 12.0 degrees (the mocked random.uniform value)
+    assert abs(angle_end - 12.0) < 1e-4
+    # Mid-transition angle should be strictly between 0 and 12.0
+    assert 0.0 < abs(angle_mid) < 12.0
