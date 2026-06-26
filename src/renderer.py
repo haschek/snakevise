@@ -238,7 +238,7 @@ class Renderer:
             return video
 
         from .utils import check_font_renderable, get_compatible_fonts
-        from .effects.subtitles import fadein, fadeout, slidein, slideout
+        from .effects.subtitles import fadein, fadeout, slidein, slideout, blur
 
         requested_fonts = self.cfg.subtitle_fonts
         if not requested_fonts:
@@ -467,6 +467,12 @@ class Renderer:
                             {"name": "fadein", "strength": float(fadein_match.group(1))}
                         )
 
+                    blur_match = re.search(r"vfx:blur:([\d.]+)", settings_str.lower())
+                    if blur_match:
+                        cue_vfx.append(
+                            {"name": "blur", "strength": float(blur_match.group(1))}
+                        )
+
                     fadeout_match = re.search(
                         r"vfx:fadeout:([\d.]+)", settings_str.lower()
                     )
@@ -545,8 +551,17 @@ class Renderer:
 
                     # Initial timing/positioning of clips
                     if txt_stroke:
-                        txt_stroke_final = txt_stroke.set_start(start).set_duration(
-                            duration
+                        stroke_offset_x = (txt_fill.w - txt_stroke.w) / 2
+                        stroke_offset_y = (txt_fill.h - txt_stroke.h) / 2
+                        txt_stroke_final = (
+                            txt_stroke.set_start(start)
+                            .set_duration(duration)
+                            .set_position(
+                                (
+                                    int(target_x + stroke_offset_x),
+                                    int(target_y + stroke_offset_y),
+                                )
+                            )
                         )
                     else:
                         txt_stroke_final = None
@@ -599,6 +614,17 @@ class Renderer:
                             )
                         elif name == "fadeout":
                             txt_fill_final, txt_stroke_final = fadeout.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "blur":
+                            txt_fill_final, txt_stroke_final = blur.apply(
                                 txt_fill_final,
                                 txt_stroke_final,
                                 strength_val,

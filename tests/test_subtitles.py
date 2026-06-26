@@ -450,3 +450,171 @@ def test_stroke_and_fill_slide_directions(mock_text_clip):
     assert stroke_p0[1] == int(fill_p0[1] - 2.5)
     assert stroke_p4[0] == int(fill_p4[0] - 5.0)
     assert stroke_p4[1] == int(fill_p4[1] - 2.5)
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_blur_effect(mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.fl_image.return_value = mock_clip
+    mock_clip.mask = MagicMock()
+    mock_clip.mask.fl_image.return_value = mock_clip.mask
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "blur", "chance": 100.0, "strength_range": (5.0, 5.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    vtt_content = (
+        "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center\nHello World\n\n"
+    )
+    clips_to_close = []
+
+    # Configure mock_clip to not return new mocks on set_duration or set_position
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.mask.set_duration.return_value = mock_clip.mask
+    mock_clip.mask.fl_image.return_value = mock_clip.mask
+
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify fl_image was called to apply the blur
+    assert mock_clip.fl_image.called
+    assert mock_clip.mask.fl_image.called
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_static_stroke_alignment(mock_text_clip):
+    # Mock TextClip instances
+    mock_stroke_clip = MagicMock()
+    mock_stroke_clip.w = 110
+    mock_stroke_clip.h = 25
+    mock_stroke_clip.set_start.return_value = mock_stroke_clip
+    mock_stroke_clip.set_duration.return_value = mock_stroke_clip
+    mock_stroke_clip.pos = None
+
+    def stroke_set_pos(pos):
+        mock_stroke_clip.pos = pos
+        return mock_stroke_clip
+
+    mock_stroke_clip.set_position.side_effect = stroke_set_pos
+
+    mock_fill_clip = MagicMock()
+    mock_fill_clip.w = 100
+    mock_fill_clip.h = 20
+    mock_fill_clip.set_start.return_value = mock_fill_clip
+    mock_fill_clip.set_duration.return_value = mock_fill_clip
+    mock_fill_clip.pos = None
+
+    def fill_set_pos(pos):
+        mock_fill_clip.pos = pos
+        return mock_fill_clip
+
+    mock_fill_clip.set_position.side_effect = fill_set_pos
+
+    mock_stroke_clip.duration = 2.0
+    mock_fill_clip.duration = 2.0
+
+    mock_text_clip.side_effect = [mock_stroke_clip, mock_fill_clip]
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[2.0],  # stroke enabled
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[],  # NO slide effects, no other effects
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center line:bottom\nHello World\n\n"
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # For align:center line:bottom
+    # target_x = (1920 - 100) / 2 = 910
+    # target_y = 1080 - 20 - 1080 * 0.05 = 1006
+    assert mock_fill_clip.pos == (910, 1006)
+
+    # stroke_offset_x = (100 - 110) / 2 = -5
+    # stroke_offset_y = (20 - 25) / 2 = -2.5
+    # So stroke pos should be int(1006 - 2.5) = 1003
+    # Resulting in (905, 1003)
+    assert mock_stroke_clip.pos == (905, 1003)
