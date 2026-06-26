@@ -367,6 +367,19 @@ class Renderer:
                     base_color = random.choice(self.cfg.subtitle_colors)
                     base_scolor = random.choice(self.cfg.subtitle_stroke_colors)
 
+                    # Pre-wrap clean_text to prevent mismatch in wrapping between fill and stroke clips
+                    # Estimate character width as 0.55 * fontsize
+                    est_char_width = base_size * 0.55
+                    container_width = video.w * size_val
+                    max_chars = max(15, int(container_width / est_char_width))
+
+                    import textwrap
+
+                    wrapped_lines = []
+                    for line in clean_text.splitlines():
+                        wrapped_lines.append(textwrap.fill(line, width=max_chars))
+                    clean_text = "\n".join(wrapped_lines)
+
                     font_args_fill = {
                         "fontsize": base_size,
                         "color": base_color,

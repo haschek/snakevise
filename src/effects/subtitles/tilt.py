@@ -55,8 +55,8 @@ def apply(
     if D % 2 != 0:
         D += 1
 
-    # Tilt angle ranges: strength 1 -> 4.2 deg max, strength 10 -> 15 deg max
-    max_angle = 3.0 + strength_clamped * 1.2
+    # Tilt angle ranges: strength 1 -> 2.1 deg max, strength 10 -> 7.5 deg max (reduced by 50%)
+    max_angle = (3.0 + strength_clamped * 1.2) * 0.5
     min_angle = max_angle / 3.0
 
     # Pre-generate tilt angles (Interval 0 starts at 0.0 deg)
@@ -86,8 +86,7 @@ def apply(
         time_in_interval = t - start_t
         if time_in_interval < transition_dur and transition_dur > 0:
             progress = time_in_interval / transition_dur
-            ease_progress = progress * progress * (3.0 - 2.0 * progress)
-            return angle_prev + (angle_curr - angle_prev) * ease_progress
+            return angle_prev + (angle_curr - angle_prev) * progress
         return angle_curr
 
     # Frame rotation function using PIL with padding to prevent clipping

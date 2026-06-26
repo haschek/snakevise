@@ -1081,7 +1081,7 @@ def test_tilt_logic_and_transitions():
     clip = FakeClip(0.5)
 
     # We patch random.uniform and random.choice inside tilt to make it deterministic
-    # strength 10 -> max_angle = 3 + 10 * 1.2 = 15.0 deg. min_angle = 5.0 deg.
+    # strength 10 -> max_angle = (3 + 10 * 1.2) * 0.5 = 7.5 deg. min_angle = 2.5 deg.
     with patch("random.choice", return_value=1):
         with patch("random.uniform", return_value=12.0):
             res_clip, _ = tilt.apply(clip, None, 10.0, 0.5, 1920, 1080, 100, 200)
@@ -1124,8 +1124,8 @@ def test_tilt_logic_and_transitions():
         frame_mid = res_clip.fl_fn(get_frame_fn, 0.25)
         assert frame_mid.shape == (102, 102, 4)
 
-        # Sample at end of interval 1 (t=0.3333): reaches target angle
-        frame_end = res_clip.fl_fn(get_frame_fn, 0.3333)
+        # Sample at end of interval 1 (t=1/3): reaches target angle
+        frame_end = res_clip.fl_fn(get_frame_fn, 1.0 / 3.0)
         assert frame_end.shape == (102, 102, 4)
 
     assert len(captured_angles) == 2
@@ -1136,3 +1136,74 @@ def test_tilt_logic_and_transitions():
     assert abs(angle_end - 12.0) < 1e-4
     # Mid-transition angle should be strictly between 0 and 12.0
     assert 0.0 < abs(angle_mid) < 12.0
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_wrapping(mock_text_clip):
+    # Mock TextClip instance
+    mock_clip_instance = MagicMock()
+    mock_clip_instance.w = 100
+    mock_clip_instance.h = 20
+    mock_clip_instance.set_start.return_value = mock_clip_instance
+    mock_clip_instance.set_duration.return_value = mock_clip_instance
+    mock_clip_instance.set_position.return_value = mock_clip_instance
+    mock_text_clip.return_value = mock_clip_instance
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[40.0],
+        subtitle_strokewidths=[2.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    long_text = (
+        "This is an extremely long subtitle line that will definitely exceed "
+        "the maximum estimated character limit and trigger pre-wrapping."
+    )
+    vtt_content = (
+        f"WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center\n{long_text}\n\n"
+    )
+
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify TextClip was called for stroke and fill
+    assert mock_text_clip.call_count == 2
+
+    # Extract the text string passed to the first TextClip instantiation
+    passed_text = mock_text_clip.call_args_list[0][0][0]
+
+    # Assert that the text contains newlines (\n) due to textwrap.fill
+    assert "\n" in passed_text
+    # Check that it starts and ends with parts of our original text
+    assert passed_text.replace("\n", " ") == long_text
