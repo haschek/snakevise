@@ -238,7 +238,14 @@ class Renderer:
             return video
 
         from .utils import check_font_renderable, get_compatible_fonts
-        from .effects.subtitles import fadein, fadeout, slidein, slideout, blur
+        from .effects.subtitles import (
+            fadein,
+            fadeout,
+            slidein,
+            slideout,
+            blur,
+            flickering,
+        )
 
         requested_fonts = self.cfg.subtitle_fonts
         if not requested_fonts:
@@ -473,6 +480,17 @@ class Renderer:
                             {"name": "blur", "strength": float(blur_match.group(1))}
                         )
 
+                    flickering_match = re.search(
+                        r"vfx:flickering:([\d.]+)", settings_str.lower()
+                    )
+                    if flickering_match:
+                        cue_vfx.append(
+                            {
+                                "name": "flickering",
+                                "strength": float(flickering_match.group(1)),
+                            }
+                        )
+
                     fadeout_match = re.search(
                         r"vfx:fadeout:([\d.]+)", settings_str.lower()
                     )
@@ -625,6 +643,17 @@ class Renderer:
                             )
                         elif name == "blur":
                             txt_fill_final, txt_stroke_final = blur.apply(
+                                txt_fill_final,
+                                txt_stroke_final,
+                                strength_val,
+                                duration,
+                                video.w,
+                                video.h,
+                                target_x,
+                                target_y,
+                            )
+                        elif name == "flickering":
+                            txt_fill_final, txt_stroke_final = flickering.apply(
                                 txt_fill_final,
                                 txt_stroke_final,
                                 strength_val,

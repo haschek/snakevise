@@ -42,13 +42,17 @@ def test_select_effects_random_order():
 
     # Run up to 50 times with different seeds to ensure we get a shuffled order
     different_order_found = False
-    for seed in range(50):
-        random.seed(seed)
-        selected = EffectEngine.select_effects(configs, order="random")
-        names = [fx["name"] for fx in selected]
-        if names != ["invert", "blur", "zoomin", "mirror", "speed"]:
-            different_order_found = True
-            break
+    state = random.getstate()
+    try:
+        for seed in range(50):
+            random.seed(seed)
+            selected = EffectEngine.select_effects(configs, order="random")
+            names = [fx["name"] for fx in selected]
+            if names != ["invert", "blur", "zoomin", "mirror", "speed"]:
+                different_order_found = True
+                break
+    finally:
+        random.setstate(state)
 
     assert different_order_found, (
         "Random order should return a shuffled list of effects"

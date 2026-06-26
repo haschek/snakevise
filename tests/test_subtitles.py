@@ -618,3 +618,157 @@ def test_subtitle_static_stroke_alignment(mock_text_clip):
     # So stroke pos should be int(1006 - 2.5) = 1003
     # Resulting in (905, 1003)
     assert mock_stroke_clip.pos == (905, 1003)
+
+
+@patch("src.renderer.TextClip")
+def test_subtitle_flickering_effect(mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.mask = MagicMock()
+    mock_clip.mask.fl.return_value = mock_clip.mask
+    mock_clip.mask.set_duration.return_value = mock_clip.mask
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "flickering", "chance": 100.0, "strength_range": (3.0, 3.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    vtt_content = (
+        "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center\nHello World\n\n"
+    )
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify that the filter fn was applied to the mask
+    assert mock_clip.mask.fl.called
+
+
+def test_flicker_count_calculation():
+    import random
+    import numpy as np
+    from src.effects.subtitles import flickering
+
+    # A simple mock clip class to bypass moviepy global mock pollution
+    class FakeClip:
+        def __init__(self, duration):
+            self.duration = duration
+            self.mask = self
+            self.fl_fn = None
+
+        def fl(self, filter_fn):
+            self.fl_fn = filter_fn
+            return self
+
+        def set_mask(self, mask):
+            self.mask = mask
+            return self
+
+        def get_frame(self, t):
+            if self.fl_fn:
+
+                def base_get_frame(time):
+                    return np.array([1.0])
+
+                return self.fl_fn(base_get_frame, t)
+            return np.array([1.0])
+
+    # Test cases: (strength, cue_duration, expected_flickers)
+    # 1. strength = 1.0, cue_duration = 0.5s -> max(1.0, 0.5 * 1.0) = 1.0 -> 1 flicker
+    # 2. strength = 1.0, cue_duration = 2.0s -> max(1.0, 2.0 * 1.0) = 2.0 -> 2 flickers
+    # 3. strength = 10.0, cue_duration = 0.5s -> max(10.0, 0.5 * 10.0) = 10.0 -> 10 flickers
+    # 4. strength = 10.0, cue_duration = 2.0s -> max(10.0, 2.0 * 10.0) = 20.0 -> 20 flickers
+    test_cases = [
+        (1.0, 0.5, 1),
+        (1.0, 2.0, 2),
+        (10.0, 0.5, 10),
+        (10.0, 2.0, 20),
+    ]
+
+    state = random.getstate()
+    try:
+        for strength, duration, expected in test_cases:
+            # Seed random to ensure deterministic flicker interval generation
+            random.seed(42)
+
+            clip = FakeClip(duration)
+            res_clip, _ = flickering.apply(
+                text_clip=clip,
+                stroke_clip=None,
+                strength=strength,
+                cue_duration=duration,
+                video_w=1920,
+                video_h=1080,
+                target_x=0,
+                target_y=0,
+            )
+
+            # Sample the mask's frame values across the duration
+            sampled_frames = []
+            steps = 2000
+            for i in range(steps + 1):
+                t = (i / steps) * duration
+                frame = res_clip.mask.get_frame(t)
+                sampled_frames.append(frame[0])
+
+            # Count the number of distinct zero intervals in sampled_frames
+            zero_intervals = 0
+            in_zero = False
+            for val in sampled_frames:
+                if val == 0.0:
+                    if not in_zero:
+                        zero_intervals += 1
+                        in_zero = True
+                else:
+                    in_zero = False
+
+            assert zero_intervals == expected, (
+                f"Expected {expected} flickers for strength={strength}, dur={duration}, "
+                f"but got {zero_intervals}."
+            )
+    finally:
+        random.setstate(state)
