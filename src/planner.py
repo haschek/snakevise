@@ -1,3 +1,4 @@
+from collections import Counter
 import logging
 import random
 from pathlib import Path
@@ -348,5 +349,40 @@ class TimelinePlanner:
                 )
                 self.edl.append(snippet)
                 self.global_time += segment.duration
+
+        # --- SWAP REPEATED USES FOR UNUSED SOURCES ---
+        path_counts = Counter(snip.source_path for snip in self.edl)
+        unused_sources = [s for s in self.sources if s.path not in path_counts]
+
+        if unused_sources:
+            unused_offsets = {s.index: 0.0 for s in unused_sources}
+            current_counts = Counter(snip.source_path for snip in self.edl)
+
+            for snip_idx in range(len(self.edl)):
+                if not unused_sources:
+                    break
+
+                snippet = self.edl[snip_idx]
+                if current_counts[snippet.source_path] > 1:
+                    # This snippet is a repeated use. Find an unused source that has enough duration.
+                    for s_idx, unused_s in enumerate(unused_sources):
+                        start_pos = (
+                            unused_s.start_limit + unused_offsets[unused_s.index]
+                        )
+                        remaining = unused_s.end_limit - start_pos
+
+                        if unused_s.is_image or remaining >= snippet.duration:
+                            # We can swap!
+                            current_counts[snippet.source_path] -= 1
+                            snippet.source_path = unused_s.path
+                            snippet.start_time = 0.0 if unused_s.is_image else start_pos
+                            snippet.is_image = unused_s.is_image
+
+                            if not unused_s.is_image:
+                                unused_offsets[unused_s.index] += snippet.duration
+
+                            # This source is now used, so remove it from unused pool
+                            unused_sources.pop(s_idx)
+                            break
 
         return self.edl

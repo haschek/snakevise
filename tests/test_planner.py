@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from src.planner import MediaSource
+from src.planner import MediaSource, TimelinePlanner
+from src.models import Segment
 
 
 @patch("src.planner.VideoFileClip")
@@ -66,3 +67,39 @@ def test_media_source_pre_slice_image():
             assert len(segments) == 1
             assert segments[0].start == 0.0
             assert segments[0].duration == 4.0
+
+
+@patch("src.planner.VideoFileClip")
+def test_timeline_planner_media_swapping(mock_video):
+    mock_clip = MagicMock()
+    mock_clip.duration = 10.0
+    mock_video.return_value.__enter__.return_value = mock_clip
+
+    with patch.object(Path, "exists", return_value=True):
+        src0 = MediaSource(Path("video1.mp4"), 0.0, 10.0, 120.0, 4, 8, 0)
+        src1 = MediaSource(Path("video2.mp4"), 0.0, 10.0, 120.0, 4, 8, 1)
+        src2 = MediaSource(Path("video3.mp4"), 0.0, 10.0, 120.0, 4, 8, 2)
+
+        sources = [src0, src1, src2]
+        planner = TimelinePlanner(
+            sources=sources,
+            mode="random-random",
+            vfx_configs=[],
+            vfx_maximum=0,
+            vfx_order="linear",
+        )
+
+        test_pool = [
+            Segment(0, 0.0, 2.0),
+            Segment(1, 0.0, 2.0),
+            Segment(0, 2.0, 2.0),
+            Segment(2, 0.0, 2.0),
+        ]
+        with patch("random.randint", return_value=4):
+            with patch("random.shuffle", lambda x: x.clear() or x.extend(test_pool)):
+                edl = planner.create_edl(6.0)
+
+                assert len(edl) == 3
+                assert edl[0].source_path == Path("video3.mp4")
+                assert edl[1].source_path == Path("video2.mp4")
+                assert edl[2].source_path == Path("video1.mp4")

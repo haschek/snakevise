@@ -477,6 +477,10 @@ def main() -> None:
     if unused_sources:
         for src_name in unused_sources:
             logger.info(f"{src_name}")
+        logger.info("------------------------------------------------------------")
+        logger.info(
+            "Note: Swapping repeated uses for these unused media was not possible."
+        )
     else:
         logger.info("None (all inputs were used)")
     logger.info("=" * 60 + "\n")
