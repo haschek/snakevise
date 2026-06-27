@@ -1207,3 +1207,75 @@ def test_subtitle_wrapping(mock_text_clip):
     assert "\n" in passed_text
     # Check that it starts and ends with parts of our original text
     assert passed_text.replace("\n", " ") == long_text
+
+
+def test_opacity_logic():
+    from src.effects.subtitles import opacity
+    import numpy as np
+    import math
+
+    class FakeMask:
+        def __init__(self):
+            self.fl_fn = None
+
+        def fl(self, filter_fn):
+            self.fl_fn = filter_fn
+            return self
+
+    class FakeClip:
+        def __init__(self, mask):
+            self.mask = mask
+
+        def set_mask(self, mask):
+            self.mask = mask
+            return self
+
+    # Case 1: stroke_clip is None (Single Layer)
+    # Test strength 1 -> 87% (0.87)
+    mask1 = FakeMask()
+    clip1 = FakeClip(mask1)
+    res_clip1, _ = opacity.apply(clip1, None, 1.0, 2.0, 1920, 1080, 100, 200)
+
+    # Evaluate mask frame function
+    dummy_frame = np.ones((10, 10), dtype=np.float32)
+    res_frame1 = mask1.fl_fn(lambda t: dummy_frame, 0.0)
+    assert np.allclose(res_frame1, 0.87)
+
+    # Test strength 10 -> 39% (0.39)
+    mask10 = FakeMask()
+    clip10 = FakeClip(mask10)
+    res_clip10, _ = opacity.apply(clip10, None, 10.0, 2.0, 1920, 1080, 100, 200)
+
+    res_frame10 = mask10.fl_fn(lambda t: dummy_frame, 0.0)
+    assert np.allclose(res_frame10, 0.39)
+
+    # Case 2: stroke_clip is NOT None (Two Layers)
+    # Test strength 1 -> 1 - sqrt(1 - 0.87) ≈ 0.639445
+    mask1_fill = FakeMask()
+    clip1_fill = FakeClip(mask1_fill)
+    mask1_stroke = FakeMask()
+    clip1_stroke = FakeClip(mask1_stroke)
+    res_fill1, res_stroke1 = opacity.apply(
+        clip1_fill, clip1_stroke, 1.0, 2.0, 1920, 1080, 100, 200
+    )
+
+    res_frame_fill1 = mask1_fill.fl_fn(lambda t: dummy_frame, 0.0)
+    res_frame_stroke1 = mask1_stroke.fl_fn(lambda t: dummy_frame, 0.0)
+    expected1 = 1.0 - math.sqrt(1.0 - 0.87)
+    assert np.allclose(res_frame_fill1, expected1)
+    assert np.allclose(res_frame_stroke1, expected1)
+
+    # Test strength 10 -> 1 - sqrt(1 - 0.39) ≈ 0.218975
+    mask10_fill = FakeMask()
+    clip10_fill = FakeClip(mask10_fill)
+    mask10_stroke = FakeMask()
+    clip10_stroke = FakeClip(mask10_stroke)
+    res_fill10, res_stroke10 = opacity.apply(
+        clip10_fill, clip10_stroke, 10.0, 2.0, 1920, 1080, 100, 200
+    )
+
+    res_frame_fill10 = mask10_fill.fl_fn(lambda t: dummy_frame, 0.0)
+    res_frame_stroke10 = mask10_stroke.fl_fn(lambda t: dummy_frame, 0.0)
+    expected10 = 1.0 - math.sqrt(1.0 - 0.39)
+    assert np.allclose(res_frame_fill10, expected10)
+    assert np.allclose(res_frame_stroke10, expected10)
