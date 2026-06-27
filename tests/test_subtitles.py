@@ -100,11 +100,13 @@ def test_subtitle_two_pass_rendering(mock_text_clip):
     first_call_args = mock_text_clip.call_args_list[0][1]
     assert first_call_args.get("stroke_color") == "black"
     assert first_call_args.get("stroke_width") == 4.0  # 2 * base_stroke
+    assert first_call_args.get("interline") == 0
 
     # Check second call (fill foreground) arguments:
     second_call_args = mock_text_clip.call_args_list[1][1]
     assert "stroke_color" not in second_call_args
     assert "stroke_width" not in second_call_args
+    assert second_call_args.get("interline") == 0
 
     # Reset mock for Case 2
     mock_text_clip.reset_mock()
