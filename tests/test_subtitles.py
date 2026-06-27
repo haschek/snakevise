@@ -346,6 +346,88 @@ def test_subtitle_effects_and_slide_in(mock_text_clip):
 
 
 @patch("src.renderer.TextClip")
+def test_subtitle_style_overrides(mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.duration = 2.0
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_text_clip.return_value = mock_clip
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[1.5],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[],
+        subtitle_vfx_chance=0.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    # VTT content has style overrides: color, scolor, fontsize, strokewidth
+    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center color:yellow scolor:red fontsize:42 strokewidth:2.5\nHello World\n\n"
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # We expect two calls: one for stroke and one for fill
+    assert mock_text_clip.call_count >= 2
+    calls = mock_text_clip.call_args_list
+    fill_call = None
+    stroke_call = None
+    for call in calls:
+        kwargs = call[1]
+        if "stroke_width" in kwargs:
+            stroke_call = call
+        else:
+            fill_call = call
+
+    assert fill_call is not None
+    assert stroke_call is not None
+
+    # Check parsed overrides
+    assert fill_call[1]["color"] == "yellow"
+    assert fill_call[1]["fontsize"] == 42.0
+
+    assert stroke_call[1]["color"] == "red"
+    assert stroke_call[1]["fontsize"] == 42.0
+    assert stroke_call[1]["stroke_width"] == 5.0  # 2 * strokewidth (2.5)
+
+
+@patch("src.renderer.TextClip")
 def test_stroke_and_fill_slide_directions(mock_text_clip):
     # Mock TextClip instances
     mock_stroke_clip = MagicMock()

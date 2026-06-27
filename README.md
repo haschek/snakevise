@@ -173,9 +173,13 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
 ### Supported Features
 
 - **Standard Timing**: Cues are rendered at their specified `START --> END` times. Supports both `MM:SS.mmm` and `HH:MM:SS.mmm`.
-- **Positioning**: Use the `align` and `line` settings in the cue header.
-  - `align:left`, `align:right`, `align:center` (horizontal).
-  - `line:top`, `line:middle`, `line:bottom` (vertical).
+- **Positioning & Styling**: Use the settings in the cue header.
+  - `align:left`, `align:right`, `align:center` (horizontal positioning).
+  - `line:top`, `line:middle`, `line:bottom` (vertical positioning).
+  - `color:VALUE` (e.g., `color:yellow` or `color:#ff0000`) overrides text color.
+  - `scolor:VALUE` (or `strokecolor:VALUE`) overrides the stroke outline color.
+  - `fontsize:NUMBER` (e.g., `fontsize:36`) overrides the font size.
+  - `strokewidth:NUMBER` (e.g., `strokewidth:2`) overrides the stroke outline width.
 - **Sizing**: Use the `size` setting to define the width of the subtitle area as a percentage of the video width (e.g., `size:50%`). Default is 90%.
 - **Formatting**: Supports standard HTML-like tags (case-insensitive):
   - `<b>...</b>` or `<strong>...</strong>` for **Bold** text.

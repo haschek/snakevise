@@ -368,6 +368,39 @@ class Renderer:
                     base_color = random.choice(self.cfg.subtitle_colors)
                     base_scolor = random.choice(self.cfg.subtitle_stroke_colors)
 
+                    # Inline overrides from WebVTT settings
+                    color_match = re.search(
+                        r"\bcolor:([^\s]+)", settings_str, re.IGNORECASE
+                    )
+                    if color_match:
+                        base_color = color_match.group(1)
+
+                    scolor_match = re.search(
+                        r"\b(?:strokecolor|scolor):([^\s]+)",
+                        settings_str,
+                        re.IGNORECASE,
+                    )
+                    if scolor_match:
+                        base_scolor = scolor_match.group(1)
+
+                    fontsize_match = re.search(
+                        r"\bfontsize:([\d.]+)", settings_str, re.IGNORECASE
+                    )
+                    if fontsize_match:
+                        try:
+                            base_size = float(fontsize_match.group(1))
+                        except ValueError:
+                            pass
+
+                    strokewidth_match = re.search(
+                        r"\bstrokewidth:([\d.]+)", settings_str, re.IGNORECASE
+                    )
+                    if strokewidth_match:
+                        try:
+                            base_stroke = float(strokewidth_match.group(1))
+                        except ValueError:
+                            pass
+
                     # Build the font variant candidates
                     fonts_to_try = []
                     if base_font:
