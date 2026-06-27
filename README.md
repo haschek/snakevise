@@ -181,20 +181,17 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
   - `<b>...</b>` or `<strong>...</strong>` for **Bold** text.
   - `<i>...</i>` or `<em>...</em>` for *Italic* text.
 - **Visual Effects & Animations**: Subtitles can fade in/out, slide in/out from off-screen, blur, flicker, jump, move, or tilt smoothly.
-  - **Inline Configuration (WebVTT settings block)**: Add tags like
-    `vfx:fadein:strength`, `vfx:fadeout:strength`, `vfx:slidein:direction:ratio`,
-    `vfx:slideout:direction:ratio`, `vfx:blur:strength`, `vfx:flickering:strength`,
-    `vfx:jumping:strength`, `vfx:moving:strength`, and `vfx:tilt:strength` directly to the cue header.
-    - Example: `vfx:fadein:8` (strength 8, i.e., 32% of cue duration)
-    - Example: `vfx:slidein:left:0.2` (slide-in from left taking 20% of cue duration)
-    - Example: `vfx:slideout:right:0.15` (slide-out to right taking 15% of cue duration)
-    - Example: `vfx:blur:5` (strength 5 constant blur)
-    - Example: `vfx:flickering:4` (flickers 4 times at random moments)
-    - Example: `vfx:jumping:6` (jumps 6 times/sec, displacement based on strength 6)
-    - Example: `vfx:moving:5` (moves smoothly 5 times/sec, displacement based on strength 5)
-    - Example: `vfx:tilt:5` (tilts smoothly 5 times/sec, inclination based on strength 5)
+  - **Inline Configuration (WebVTT settings block)**: Add tags directly to the cue header using the `stfx:NAME:CHANCE:STRENGTH` format.
+    - If `CHANCE` or `STRENGTH` are omitted (e.g., `stfx:fadein`), they automatically fall back to the global defaults.
+    - Custom values for `slidein` and `slideout` are passed in the `STRENGTH` segment as `direction-duration` (e.g., `left-0.2` or `top-0.15`).
+    - Special control effects: `stfx:none:100:0` disables all effects for the cue; `stfx:onlyvtt:100:0` runs ONLY VTT-specified effects, ignoring global probabilistic effects.
+    - Example: `stfx:fadein:100:8` (100% chance, strength 8 fade duration)
+    - Example: `stfx:slidein:100:left-0.2` (100% chance, slide-in from left taking 20% of cue duration)
+    - Example: `stfx:slideout:100:right-0.15` (100% chance, slide-out to right taking 15% of cue duration)
+    - Example: `stfx:blur:50:5` (50% chance, strength 5 constant blur)
+    - Example: `stfx:jumping` (runs with default chance and intensity)
   - **Global Configuration (CLI & Presets)**: Use the structured subtitle visual effects engine (analogous to video effects).
-    - Example: `python snakevise.py --subtitles lyrics.vtt --stfx fadein:50:1..10 --stfx slidein:100:5`
+    - Example: `python snakevise.py --subtitles lyrics.vtt --stfx fadein:50:1..10 --stfx slideout:50:8`
     - **Fading Strength**: Relative to the cue's active display time: `1 = 4%` to
       `10 = 40%` of the subtitle cue's duration (e.g., strength `8` on a `2.0s`
       cue results in a `0.64s` fade duration).
@@ -218,15 +215,18 @@ This is ideal for lyrics, titles, or commentary that needs to be perfectly synce
       (minimum 1 flicker per cue), and strength `10` corresponds to 10 flickers per second (minimum 10 flickers per cue). The duration of each flicker is 15ms to 45ms.
     - **Jumping Strength**: Dictates displacement distance and jump frequency. Strength `1` corresponds to 1 jump per second (min 1 per cue), and strength `10`
       corresponds to 10 jumps per second (min 10 per cue). The position jumps randomly in all directions, alternating signs to cross the original position on every jump.
-      The final displacement is randomly chosen between a minimum offset (1/3 of max possible displacement) and maximum (15px at strength 1, 60px at strength 10).
+      The final displacement is randomly chosen between a minimum offset (1/3 of max
+      possible displacement) and maximum (15% of the font size at strength 1, 40% of the font size at strength 10).
       To ensure readability, each position is held for a minimum of 150ms.
     - **Moving Strength**: Similar to jumping, but moves the subtitle continuously between positions without stationary pauses, using smooth cubic ease-in-out transitions. Strength
-      `1` corresponds to 1 move per second (min 1 per cue) and `10` corresponds to 10 moves per second (min 10 per cue). Alternates signs to cross the origin.
+      `1` corresponds to 1 move per second (min 1 per cue) and `10` corresponds to 10 moves
+      per second (min 10 per cue). Alternates signs to cross the origin. Displacement is bound to 15%–40% of font size.
     - **Tilt Strength**: Smoothly rotates/inclines the subtitle back and forth continuously without stationary pauses using cubic ease-in-out transitions. Strength `1`
       corresponds to 1 tilt per second (min 1 per cue) and `10` corresponds to 10 tilts per second (min 10 per cue). The rotation alternates signs to cross the original
       upright position (0 deg). Maximum tilt angle ranges from 4.2 degrees (at strength 1) to 15.0 degrees (at strength 10), with a minimum offset of 1/3 of the max angle.
 - **Dry Run Support**: Use `--dry-run` to see the calculated subtitle plan and positions in the log without rendering the video.
-- **Dynamic Sizing**: Subtitles are automatically wrapped and sized to fit within 90% of the video width.
+- **Dynamic Sizing & Line Spacing**: Subtitles are automatically wrapped to fit within 90% of the
+  video width using a dynamic font width check. Multi-line subtitles use a tight default line height (max 125%).
 - **Advanced Font Support**:
   - Use `--stfont` to specify one or multiple system fonts.
   - Mix fonts: `--stfont Arial --stfont Courier` (randomly chosen per line).
@@ -242,13 +242,13 @@ Save this as `lyrics.vtt`:
 ```vtt
 WEBVTT
 
-00:00.500 --> 00:02.000 align:left line:top vfx:fadein:8 vfx:fadeout:6
+00:00.500 --> 00:02.000 align:left line:top stfx:fadein:100:8 stfx:fadeout:100:6
 <b>SNAKEVISE</b> - THE VIBE
 
-00:02.500 --> 00:05.000 align:center line:middle vfx:slidein:left:0.2 vfx:fadeout:5
+00:02.500 --> 00:05.000 align:center line:middle stfx:slidein:100:left-0.2 stfx:fadeout:100:5
 <i>Procedural Video Generator</i>
 
-00:06.000 --> 00:08.000 align:right line:bottom vfx:slidein:top:0.15 vfx:slideout:right:0.2
+00:06.000 --> 00:08.000 align:right line:bottom stfx:slidein:100:top-0.15 stfx:slideout:100:right-0.2
 Created with <u>Gemini CLI</u>
 ```
 

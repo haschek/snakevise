@@ -72,6 +72,7 @@ class EffectEngine:
         configs: List[Dict[str, Any]],
         max_limit: Optional[int] = None,
         order: str = "linear",
+        allow_none: bool = False,
     ) -> List[Dict[str, Any]]:
         """Selects effects based on probability configurations.
 
@@ -79,6 +80,7 @@ class EffectEngine:
             configs: List of effect configurations.
             max_limit: Maximum number of effects to select.
             order: 'linear' or 'random' order of selection.
+            allow_none: Whether to allow selecting control effects like 'none'.
 
         Returns:
             List of selected effects with specific strengths.
@@ -101,7 +103,9 @@ class EffectEngine:
         guaranteed = []
         candidates = []
         for idx, fx in enumerate(processed_configs):
-            if fx["name"] != "none" and random.random() * 100 <= fx["chance"]:
+            if (allow_none or fx["name"] != "none") and random.random() * 100 <= fx[
+                "chance"
+            ]:
                 min_s, max_s = fx["strength_range"]
                 actual_strength = (
                     min_s if min_s == max_s else random.uniform(min_s, max_s)
@@ -111,6 +115,8 @@ class EffectEngine:
                     "strength": actual_strength,
                     "_orig_idx": idx,
                 }
+                if "_direct" in fx:
+                    res["_direct"] = fx["_direct"]
                 if fx["chance"] >= 100:
                     guaranteed.append(res)
                 else:

@@ -224,7 +224,7 @@ def test_subtitle_effects_and_slide_in(mock_text_clip):
     mock_video.duration = 10.0
 
     # Case 1: VTT Cue with overridden values: fadein=0.8, fadeout=0.4, slidein=top:0.2, slideout=bottom:0.3
-    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center line:bottom vfx:fadein:0.8 vfx:fadeout:0.4 vfx:slidein:top:0.2 vfx:slideout:bottom:0.3\nHello World\n\n"
+    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center line:bottom stfx:fadein:100:0.8 stfx:fadeout:100:0.4 stfx:slidein:100:top-0.2 stfx:slideout:100:bottom-0.3\nHello World\n\n"
 
     clips_to_close = []
     with patch("builtins.open", mock_open(read_data=vtt_content)):
@@ -1283,3 +1283,213 @@ def test_opacity_logic():
     expected10 = 1.0 - math.sqrt(1.0 - 0.39)
     assert np.allclose(res_frame_fill10, expected10)
     assert np.allclose(res_frame_stroke10, expected10)
+
+
+@patch("src.renderer.TextClip")
+@patch("src.effects.subtitles.fadein.apply")
+@patch("src.effects.subtitles.flickering.apply")
+def test_subtitle_effect_control_none(
+    mock_flicker_apply, mock_fadein_apply, mock_text_clip
+):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    mock_fadein_apply.return_value = (mock_clip, None)
+    mock_flicker_apply.return_value = (mock_clip, None)
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "flickering", "chance": 100.0, "strength_range": (3.0, 3.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    # VTT content has stfx:none:100:0.0 and stfx:fadein:100:2.0
+    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center stfx:none:100:0.0 stfx:fadein:100:2.0\nHello World\n\n"
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Since stfx:none:100:0.0 is present, NO effects should be applied at all
+    assert not mock_fadein_apply.called
+    assert not mock_flicker_apply.called
+
+
+@patch("src.renderer.TextClip")
+@patch("src.effects.subtitles.fadein.apply")
+@patch("src.effects.subtitles.flickering.apply")
+def test_subtitle_effect_control_onlyvtt(
+    mock_flicker_apply, mock_fadein_apply, mock_text_clip
+):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    mock_fadein_apply.return_value = (mock_clip, None)
+    mock_flicker_apply.return_value = (mock_clip, None)
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[
+            {"name": "flickering", "chance": 100.0, "strength_range": (3.0, 3.0)},
+        ],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="1..3",
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    # VTT content has stfx:onlyvtt:100:0.0 and stfx:fadein:100:2.0
+    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center stfx:onlyvtt:100:0.0 stfx:fadein:100:2.0\nHello World\n\n"
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Since stfx:onlyvtt:100:0.0 is present, only fadein (VTT-specified) should be applied, flickering (global) skipped
+    assert mock_fadein_apply.called
+    assert not mock_flicker_apply.called
+
+
+@patch("src.renderer.TextClip")
+@patch("src.effects.subtitles.fadein.apply")
+def test_subtitle_effect_default_fallbacks(mock_fadein_apply, mock_text_clip):
+    mock_clip = MagicMock()
+    mock_clip.w = 100
+    mock_clip.h = 20
+    mock_clip.set_start.return_value = mock_clip
+    mock_clip.set_duration.return_value = mock_clip
+    mock_clip.set_position.return_value = mock_clip
+    mock_clip.duration = 2.0
+    mock_text_clip.return_value = mock_clip
+
+    mock_fadein_apply.return_value = (mock_clip, None)
+
+    from unittest.mock import mock_open
+    from pathlib import Path
+    from src.models import RenderConfig
+    from src.renderer import Renderer
+
+    config = RenderConfig(
+        output_path=Path("output.mp4"),
+        temp_dir=Path("temp"),
+        crop=[],
+        resolution=(1920, 1080),
+        fps=24,
+        codec="libx264",
+        optimize=False,
+        audio_path=None,
+        subtitles_path=Path("dummy_subs.vtt"),
+        subtitle_fonts=["Arial"],
+        subtitle_fontsizes=[24.0],
+        subtitle_strokewidths=[0.0],
+        subtitle_colors=["white"],
+        subtitle_stroke_colors=["black"],
+        subtitle_vfx=[],
+        subtitle_vfx_chance=100.0,
+        subtitle_vfx_intensity="3..3",  # Enforce strength exactly 3.0
+        subtitle_vfx_maximum=None,
+        subtitle_vfx_order="linear",
+        target_duration=None,
+        fade_in=0.0,
+        fade_out=0.0,
+        fade_color="black",
+        dry_run=False,
+        bpm=120.0,
+    )
+
+    renderer = Renderer(config)
+    mock_video = MagicMock()
+    mock_video.w = 1920
+    mock_video.h = 1080
+    mock_video.duration = 10.0
+
+    # VTT content has stfx:fadein (both chance and strength omitted)
+    vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:center stfx:fadein\nHello World\n\n"
+    clips_to_close = []
+    with patch("builtins.open", mock_open(read_data=vtt_content)):
+        with patch("src.utils.check_font_renderable", return_value=True):
+            with patch.object(Path, "exists", return_value=True):
+                renderer._apply_subtitles(mock_video, clips_to_close)
+
+    # Verify fadein was called with default strength (3.0) and default chance (100% -> applied)
+    assert mock_fadein_apply.called
+    assert mock_fadein_apply.call_args[0][2] == 3.0

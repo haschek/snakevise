@@ -18,7 +18,7 @@ from PIL import Image, ImageOps
 from .effects import EffectEngine
 from .models import RenderConfig, Snippet
 from .reframing import reframe
-from .utils import hex_to_rgb, parse_sub_settings
+from .utils import hex_to_rgb, parse_range_string, parse_sub_settings
 
 logger = logging.getLogger("snakevise")
 
@@ -528,136 +528,113 @@ class Renderer:
                         txt_stroke.fontsize = base_size
 
                     # 5. Parse VFX / Animations
-                    cue_vfx = []
+                    cue_vfx_configs = []
+                    # Find all words starting with "stfx:"
+                    stfx_words = re.findall(r"\bstfx:([^\s]+)", settings_str)
 
-                    # Check for inline WebVTT vfx overrides
-                    fadein_match = re.search(
-                        r"vfx:fadein:([\d.]+)", settings_str.lower()
-                    )
-                    if fadein_match:
-                        cue_vfx.append(
-                            {"name": "fadein", "strength": float(fadein_match.group(1))}
-                        )
+                    # Determine default values for omissions
+                    default_chance = self.cfg.subtitle_vfx_chance
+                    default_range = parse_range_string(self.cfg.subtitle_vfx_intensity)
 
-                    blur_match = re.search(r"vfx:blur:([\d.]+)", settings_str.lower())
-                    if blur_match:
-                        cue_vfx.append(
-                            {"name": "blur", "strength": float(blur_match.group(1))}
-                        )
+                    for word in stfx_words:
+                        parts = word.split(":")
+                        name = parts[0]
 
-                    flickering_match = re.search(
-                        r"vfx:flickering:([\d.]+)", settings_str.lower()
-                    )
-                    if flickering_match:
-                        cue_vfx.append(
+                        # Parse chance (fallback if omitted or empty)
+                        chance = default_chance
+                        if len(parts) > 1 and parts[1]:
+                            try:
+                                chance = float(parts[1])
+                            except ValueError:
+                                pass
+
+                        # Get strength string if present
+                        strength_str = parts[2] if len(parts) > 2 else ""
+
+                        # 1. 'none' and 'onlyvtt' are special control effects
+                        if name in ("none", "onlyvtt"):
+                            cue_vfx_configs.append(
+                                {
+                                    "name": name,
+                                    "chance": 100.0,
+                                    "strength_range": (0.0, 0.0),
+                                }
+                            )
+                            continue
+
+                        # 2. 'slidein' and 'slideout' direction-duration override handling
+                        if name in ("slidein", "slideout") and "-" in strength_str:
+                            try:
+                                dir_part, dur_part = strength_str.split("-")
+                                duration_ratio = float(dur_part)
+                                cue_vfx_configs.append(
+                                    {
+                                        "name": name,
+                                        "chance": chance,
+                                        "strength_range": (0.0, 0.0),
+                                        "_direct": (dir_part, duration_ratio),
+                                    }
+                                )
+                                continue
+                            except ValueError:
+                                pass
+
+                        # 3. Standard parsing for all standard effects (and numeric slidein/slideout)
+                        strength_range = default_range
+                        if strength_str:
+                            strength_range = parse_range_string(strength_str)
+
+                        cue_vfx_configs.append(
                             {
-                                "name": "flickering",
-                                "strength": float(flickering_match.group(1)),
+                                "name": name,
+                                "chance": chance,
+                                "strength_range": strength_range,
                             }
                         )
 
-                    jumping_match = re.search(
-                        r"vfx:jumping:([\d.]+)", settings_str.lower()
+                    # Select VTT-specific effects based on their parsed probabilities
+                    cue_vfx = EffectEngine.select_effects(
+                        configs=cue_vfx_configs,
+                        allow_none=True,
                     )
-                    if jumping_match:
-                        cue_vfx.append(
-                            {
-                                "name": "jumping",
-                                "strength": float(jumping_match.group(1)),
-                            }
-                        )
-
-                    moving_match = re.search(
-                        r"vfx:moving:([\d.]+)", settings_str.lower()
-                    )
-                    if moving_match:
-                        cue_vfx.append(
-                            {
-                                "name": "moving",
-                                "strength": float(moving_match.group(1)),
-                            }
-                        )
-
-                    tilt_match = re.search(r"vfx:tilt:([\d.]+)", settings_str.lower())
-                    if tilt_match:
-                        cue_vfx.append(
-                            {
-                                "name": "tilt",
-                                "strength": float(tilt_match.group(1)),
-                            }
-                        )
-
-                    opacity_match = re.search(
-                        r"vfx:opacity:([\d.]+)", settings_str.lower()
-                    )
-                    if opacity_match:
-                        cue_vfx.append(
-                            {
-                                "name": "opacity",
-                                "strength": float(opacity_match.group(1)),
-                            }
-                        )
-
-                    fadeout_match = re.search(
-                        r"vfx:fadeout:([\d.]+)", settings_str.lower()
-                    )
-                    if fadeout_match:
-                        cue_vfx.append(
-                            {
-                                "name": "fadeout",
-                                "strength": float(fadeout_match.group(1)),
-                            }
-                        )
-
-                    slidein_match = re.search(
-                        r"vfx:slidein:([a-zA-Z]+)(?::([\d.]+))?", settings_str.lower()
-                    )
-                    if slidein_match:
-                        direction = slidein_match.group(1)
-                        dur = (
-                            float(slidein_match.group(2))
-                            if slidein_match.group(2)
-                            else 0.2
-                        )
-                        cue_vfx.append(
-                            {
-                                "name": "slidein",
-                                "strength": 0.0,
-                                "_direct": (direction, dur),
-                            }
-                        )
-
-                    slideout_match = re.search(
-                        r"vfx:slideout:([a-zA-Z]+)(?::([\d.]+))?", settings_str.lower()
-                    )
-                    if slideout_match:
-                        direction = slideout_match.group(1)
-                        dur = (
-                            float(slideout_match.group(2))
-                            if slideout_match.group(2)
-                            else 0.2
-                        )
-                        cue_vfx.append(
-                            {
-                                "name": "slideout",
-                                "strength": 0.0,
-                                "_direct": (direction, dur),
-                            }
-                        )
 
                     # Select global probabilistic subtitle effects for this cue
                     global_cue_vfx = EffectEngine.select_effects(
                         configs=self.cfg.subtitle_vfx,
                         max_limit=self.cfg.subtitle_vfx_maximum,
                         order=self.cfg.subtitle_vfx_order,
+                        allow_none=True,
                     )
 
-                    # WebVTT direct cue effects override global effects of the same name
+                    # WebVTT direct cue effects override global effects of the same name.
+                    # Note: We override global effects of the same name even if the VTT effect
+                    # was not selected by the probability selection (it was still specified).
                     final_cue_vfx = list(cue_vfx)
-                    cue_vfx_names = {fx["name"] for fx in cue_vfx}
+                    specified_vtt_names = {fx["name"] for fx in cue_vfx_configs}
                     for fx in global_cue_vfx:
-                        if fx["name"] not in cue_vfx_names:
+                        if fx["name"] not in specified_vtt_names:
                             final_cue_vfx.append(fx)
+
+                    # Special control effects check: 'none' and 'onlyvtt'
+                    has_none = any(fx["name"] == "none" for fx in final_cue_vfx)
+                    has_onlyvtt = any(fx["name"] == "onlyvtt" for fx in final_cue_vfx)
+
+                    if has_none:
+                        final_cue_vfx = []
+                    elif has_onlyvtt:
+                        # Keep only the effects explicitly specified in WebVTT (in cue_vfx)
+                        final_cue_vfx = [
+                            fx
+                            for fx in cue_vfx
+                            if fx["name"] not in ("onlyvtt", "none")
+                        ]
+                    else:
+                        # Remove control effects from final selection so they don't trigger warnings/apply
+                        final_cue_vfx = [
+                            fx
+                            for fx in final_cue_vfx
+                            if fx["name"] not in ("onlyvtt", "none")
+                        ]
 
                     # Calculate target absolute numeric coordinates (relative to txt_fill dimensions)
                     if h_align == "left":
