@@ -479,6 +479,11 @@ class Renderer:
                                 "Could not create TextClip with any font variant."
                             )
 
+                    if txt_fill:
+                        txt_fill.fontsize = base_size
+                    if txt_stroke:
+                        txt_stroke.fontsize = base_size
+
                     # 5. Parse VFX / Animations
                     cue_vfx = []
 

@@ -847,6 +847,7 @@ def test_jumping_count_and_intervals():
         def __init__(self, duration):
             self.duration = duration
             self.pos = (100, 200)
+            self.fontsize = 120.0
 
         def set_position(self, pos_fn):
             self.pos = pos_fn
@@ -878,11 +879,11 @@ def test_jumping_count_and_intervals():
     assert np.sign(dx_1) == -np.sign(dx_2)
     assert np.sign(dy_1) == -np.sign(dy_2)
 
-    # Displacement bounds: min_disp = 60.0 / 3.0 = 20.0, max_disp = 60.0
-    assert 20.0 <= abs(dx_1) <= 60.0
-    assert 20.0 <= abs(dy_1) <= 60.0
-    assert 20.0 <= abs(dx_2) <= 60.0
-    assert 20.0 <= abs(dy_2) <= 60.0
+    # Displacement bounds: min_disp = 48.0 / 3.0 = 16.0, max_disp = 48.0
+    assert 16.0 <= abs(dx_1) <= 48.0
+    assert 16.0 <= abs(dy_1) <= 48.0
+    assert 16.0 <= abs(dx_2) <= 48.0
+    assert 16.0 <= abs(dy_2) <= 48.0
 
 
 @patch("src.renderer.TextClip")
@@ -957,6 +958,7 @@ def test_moving_smooth_interpolation():
         def __init__(self, duration):
             self.duration = duration
             self.pos = (100, 200)
+            self.fontsize = 120.0
 
         def set_position(self, pos_fn):
             self.pos = pos_fn

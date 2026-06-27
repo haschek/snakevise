@@ -38,8 +38,11 @@ def apply(
     if num_jumps == 0:
         return text_clip, stroke_clip
 
-    # Calculate maximum displacement per axis: strength 1 -> 15px, strength 10 -> 60px
-    max_disp = 10.0 + strength_clamped * 5.0
+    # Calculate maximum displacement per axis based on font size:
+    # strength 1 -> 15% of font size, strength 10 -> 40% of font size
+    font_size = getattr(text_clip, "fontsize", 40.0)
+    percent = 0.15 + (strength_clamped - 1.0) / 9.0 * 0.25
+    max_disp = font_size * percent
     # Minimum offset is 1/3 of the maximum possible displacement
     min_disp = max_disp / 3.0
 
